@@ -10,6 +10,7 @@ from langchain_openai import ChatOpenAI
 import asyncio
 import uuid
 from datetime import datetime
+from langchain.chat_models.base import init_chat_model
 
 
 class AgentState(BaseModel):
@@ -30,11 +31,12 @@ class BaseAgent(ABC):
     def __init__(self, agent_id: Optional[str] = None, **kwargs):
         self.agent_id = agent_id or str(uuid.uuid4())
         self.agent_type = self.__class__.__name__
-        self.llm = ChatOpenAI(
-            model="gpt-3.5-turbo",
-            temperature=0.7,
-            **kwargs
-        )
+        self.llm = init_chat_model(model="gpt-3.5-turbo", temperature=0.7, **kwargs)
+        # self.llm = ChatOpenAI(
+        #     model="gpt-3.5-turbo",
+        #     temperature=0.7,
+        #     **kwargs
+        # )
         self.state = AgentState(
             agent_id=self.agent_id,
             agent_type=self.agent_type,
@@ -46,6 +48,11 @@ class BaseAgent(ABC):
     @abstractmethod
     def _define_capabilities(self) -> List[str]:
         """定义Agent的能力"""
+        pass
+
+    @abstractmethod
+    def process_query(self, query: str) -> str:
+        """处理用户查询"""
         pass
     
     @abstractmethod

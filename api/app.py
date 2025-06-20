@@ -15,7 +15,7 @@ def create_app():
     
     # 配置CORS
     CORS(app, resources={r"/api/*": {"origins": "*"}})
-    
+
     # 注册蓝图
     app.register_blueprint(api_bp)
     

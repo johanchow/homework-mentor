@@ -11,6 +11,7 @@ import asyncio
 import uuid
 from datetime import datetime
 from langchain.chat_models.base import init_chat_model
+from langchain_community.chat_models import ChatTongyi
 
 
 class AgentState(BaseModel):
@@ -31,7 +32,9 @@ class BaseAgent(ABC):
     def __init__(self, agent_id: Optional[str] = None, **kwargs):
         self.agent_id = agent_id or str(uuid.uuid4())
         self.agent_type = self.__class__.__name__
-        self.llm = init_chat_model(model="gpt-3.5-turbo", temperature=0.7, **kwargs)
+        self.llm = ChatTongyi()
+        # self.llm = init_chat_model("deepseek-r1", model_provider="deepseek")
+        # self.llm = init_chat_model(model="gemini-1.5-flash", temperature=0.7, **kwargs)
         # self.llm = ChatOpenAI(
         #     model="gpt-3.5-turbo",
         #     temperature=0.7,

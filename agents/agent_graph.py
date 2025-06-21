@@ -28,4 +28,5 @@ if __name__ == "__main__":
     print('----------- load_dotenv -----------')
     load_dotenv('.env')
     app = create_workflow()
-    app.invoke({"messages": ["你好，我是小明，我想学习中文。"]})
+    resp = app.invoke({"messages": ["你好，我是小明，我想学习中文。"]})
+    print('resp', resp)

@@ -1,5 +1,6 @@
 import os
 from typing import Optional, Dict, Any
+from langchain_community.chat_models import ChatTongyi
 from dotenv import load_dotenv
 
 class EnvUtils:
@@ -101,19 +102,9 @@ class EnvUtils:
     @staticmethod
     def get_llm():
         """Get the appropriate LLM based on environment configuration"""
-        model_type = EnvUtils().get_required_env("MODEL_TYPE").lower()
-        if model_type == "ollama":
-            from langchain_ollama import ChatOllama
-            return ChatOllama(
-                model="mistral",
-                temperature=0
-            )
-        else:
-            from langchain_openai import ChatOpenAI
-            return ChatOpenAI(
-                model="gpt-4",
-                temperature=0
-            )
+        llm = ChatTongyi()
+        return llm
+
 # Example usage
 def main():
     # Initialize EnvUtils (will load .env)

@@ -3,7 +3,7 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import START, MessagesState, StateGraph
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-from utils.env import EnvUtils
+from utils.llm import LLM
 from .chinese_agent import get_chinese_agent
 from .gossip_agent import get_gossip_agent
 
@@ -13,7 +13,7 @@ class AgentState(TypedDict):
     subject: str
 
 def decide_route(state: AgentState):
-    llm = EnvUtils().get_llm()
+    llm = LLM.get_text_llm()
     prompt = ChatPromptTemplate.from_template("""
     你是一个AI助手，根据用户的问题，判断用户的问题是否属于以下学科：
     1. 语文

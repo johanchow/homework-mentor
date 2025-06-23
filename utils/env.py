@@ -1,6 +1,5 @@
 import os
 from typing import Optional, Dict, Any
-from langchain_community.chat_models import ChatTongyi
 from dotenv import load_dotenv
 
 class EnvUtils:
@@ -29,9 +28,9 @@ class EnvUtils:
     def load_env(self, env_path: Optional[str] = None):
         """
         Load environment variables from .env file
-        
+
         Args:
-            env_path (str, optional): Path to .env file. 
+            env_path (str, optional): Path to .env file.
                                       Defaults to searching in current and parent directories
         """
         # List of potential .env file locations
@@ -56,11 +55,11 @@ class EnvUtils:
     def get_env(key: str, default: Optional[Any] = None) -> Optional[str]:
         """
         Retrieve an environment variable
-        
+
         Args:
             key (str): Environment variable name
             default (optional): Default value if variable not found
-        
+
         Returns:
             str or default value: Environment variable value
         """
@@ -70,13 +69,13 @@ class EnvUtils:
     def get_required_env(key: str) -> str:
         """
         Retrieve a required environment variable
-        
+
         Args:
             key (str): Environment variable name
-        
+
         Returns:
             str: Environment variable value
-        
+
         Raises:
             ValueError: If environment variable is not set
         """
@@ -88,22 +87,17 @@ class EnvUtils:
     def get_config(self, config_map: Dict[str, Any]) -> Dict[str, Any]:
         """
         Retrieve multiple configuration values with defaults
-        
+
         Args:
             config_map (dict): Dictionary of config keys to default values
-        
+
         Returns:
             dict: Configuration values
         """
         return {
-            key: self.get_env(key, default) 
+            key: self.get_env(key, default)
             for key, default in config_map.items()
         }
-    @staticmethod
-    def get_llm():
-        """Get the appropriate LLM based on environment configuration"""
-        llm = ChatTongyi()
-        return llm
 
 # Example usage
 def main():
@@ -114,7 +108,7 @@ def main():
     Kafka_topic = env_utils.get_env('Kafka_topic')
     print(f"Kafka_topic: {Kafka_topic}")
 
-   
+
 
 if __name__ == "__main__":
     main()

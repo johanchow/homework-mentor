@@ -36,20 +36,12 @@ class ChineseTeacherAgent(BaseAgent):
 4. 鼓励学生独立思考，培养自主学习能力
 5. 关注学生的个体差异，提供个性化的建议
 
-教学指导原则：
-- 启发式教学：引导学生自己发现答案
-- 循序渐进：从简单到复杂，逐步深入
-- 联系实际：将抽象知识与生活实际结合
-- 培养兴趣：激发学生对中文学习的兴趣
-- 注重实践：提供具体的练习方法和建议
-
 当学生提出语文题目或问题时，你需要：
 1. 仔细分析题目内容和学生问题
 2. 理解问题的核心和难点
 3. 提供解决问题的思路和方法
 4. 解释相关的语文学习原则
 5. 用具体例子说明
-6. 提供相关的练习和巩固方法
 
 请根据语文题目和用户问题，进行详细的解答讲解。"""),
             ("user", "{input}"),
@@ -59,31 +51,6 @@ class ChineseTeacherAgent(BaseAgent):
         agent = create_openai_functions_agent(self.llm, tools=[], prompt=prompt)
         self.agent_executor = AgentExecutor(agent=agent, tools=[])
 
-    def _define_capabilities(self) -> List[str]:
-        """定义Agent的能力"""
-        return [
-            "中文教学", "语文指导", "写作指导", "阅读理解", "语法分析",
-            "作文指导", "诗词鉴赏", "文言文", "现代文", "语言表达",
-            "chinese", "teaching", "guidance", "writing", "reading"
-        ]
-    
-    def _analyze_task_type(self, task: str) -> str:
-        """分析任务类型"""
-        task_lower = task.lower()
-        
-        if any(word in task_lower for word in ["写作", "作文", "写", "writing"]):
-            return "writing"
-        elif any(word in task_lower for word in ["阅读", "理解", "reading", "comprehension"]):
-            return "reading"
-        elif any(word in task_lower for word in ["语法", "grammar", "句式", "修辞"]):
-            return "grammar"
-        elif any(word in task_lower for word in ["诗词", "诗歌", "poetry", "古诗词"]):
-            return "poetry"
-        elif any(word in task_lower for word in ["文言文", "古文", "classical", "ancient"]):
-            return "classical"
-        else:
-            return "general"
-    
     def _get_teaching_methods(self, task_type: str) -> List[str]:
         """获取教学方法"""
         methods_map = {
@@ -150,25 +117,6 @@ class ChineseTeacherAgent(BaseAgent):
         }
         return suggestions_map.get(task_type, suggestions_map["general"])
     
-    def _extract_main_topics(self) -> List[str]:
-        """提取主要话题"""
-        # 简化的实现，实际应用中可以使用更复杂的NLP处理
-        topics = []
-        for msg in self.conversation_history:
-            if msg.get("role") == "user":
-                content = msg.get("content", "")
-                if "写作" in content:
-                    topics.append("写作指导")
-                elif "阅读" in content:
-                    topics.append("阅读理解")
-                elif "语法" in content:
-                    topics.append("语法学习")
-                elif "诗词" in content:
-                    topics.append("诗词鉴赏")
-                elif "文言文" in content:
-                    topics.append("文言文学习")
-        return list(set(topics)) if topics else ["中文学习"]
-
     def process_query(self, query: str) -> str:
         """处理用户查询 - 使用AgentExecutor"""
         result = self.agent_executor.invoke({"input": query})

@@ -69,7 +69,7 @@ if __name__ == "__main__":
 
     app = create_workflow()
     resp1 = app.invoke({
-        "messages": ["这个题目有几个选项呢？"],
+        "messages": ["怎么描述这个图片？"],
         "question": question,
     }, config={"configurable": {"thread_id": "1234567890"}})
     print('resp1', resp1)

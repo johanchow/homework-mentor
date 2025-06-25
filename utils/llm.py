@@ -1,10 +1,19 @@
-from langchain_community.chat_models import ChatTongyi
+import os
+from langchain_community.chat_models import ChatOpenAI
 
 class LLM:
     @staticmethod
     def get_text_llm(temperature: float = 0.0):
-        return ChatTongyi(model="qwen-plus", temperature=temperature)
+        return ChatOpenAI(
+            openai_api_key=os.getenv("DASHSCOPE_API_KEY"),
+            openai_api_base="https://dashscope.aliyuncs.com/compatible-mode/v1",
+            model="qwen-plus",
+        )
 
     @staticmethod
     def get_image_llm(temperature: float = 0.0):
-        return ChatTongyi(model="qwen-vl-plus", temperature=temperature)
+        return ChatOpenAI(
+            openai_api_key=os.getenv("DASHSCOPE_API_KEY"),
+            openai_api_base="https://dashscope.aliyuncs.com/compatible-mode/v1",
+            model="qwen-vl-plus",
+        )

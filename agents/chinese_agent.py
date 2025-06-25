@@ -11,6 +11,7 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 import asyncio
 from datetime import datetime
 from entity.question import Question
+from utils.llm import LLM
 
 class ChineseTeacherAgent(BaseAgent):
     """中文老师Agent - 负责中文教学指导和答疑"""
@@ -20,6 +21,7 @@ class ChineseTeacherAgent(BaseAgent):
         # 存储对话历史，支持多轮问答
         self.conversation_history: List[Dict[str, Any]] = []
         self.current_session_id: Optional[str] = None
+        self.llm = LLM.get_image_llm()
 
         # 初始化AgentExecutor
         self._init_agent()
@@ -43,11 +45,21 @@ class ChineseTeacherAgent(BaseAgent):
 4. 解释相关的语文学习原则
 5. 用具体例子说明
 
-语文题目是: {question_title}
 请针对用户的问题，进行解答提示。"""),
             MessagesPlaceholder(variable_name="messages"),
             MessagesPlaceholder("agent_scratchpad"),  # 必须有这个，LangChain内部把执行记录写入到这个变量
-            ("human", "{input}")
+            {
+                "role": "human",
+                "content": [{
+                    "type": "image",
+                    "image_url": {
+                        "url": "https://gips2.baidu.com/it/u=1651586290,17201034&fm=3028&app=3028&f=JPEG&fmt=auto&q=100&size=f600_800"
+                    }
+                }, {
+                    "type": "text",
+                    "text": "{input}"
+                }]
+            }
         ])
 
         agent = create_openai_functions_agent(self.llm, tools=[], prompt=prompt)
@@ -123,7 +135,22 @@ class ChineseTeacherAgent(BaseAgent):
         """处理用户查询 - 使用AgentExecutor"""
         query = messages[-1].content
         messages = messages[:-1]
-        result = self.agent_executor.invoke({"question_title": question.title, "messages": messages, "input": query})
+        result = self.llm.invoke([{
+            "role": "system",
+            "content": "你是一位经验丰富的中文老师，擅长语文教学和指导。"
+        }, {
+            "role": "user",
+            "content": [{
+                "type": "text",
+                "text": "请描述一下这个图片"
+            }, {
+                "type": "image_url",
+                "image_url": {
+                    "url": "https://gips2.baidu.com/it/u=1651586290,17201034&fm=3028&app=3028&f=JPEG&fmt=auto&q=100&size=f600_800"
+                }
+            }]
+        }])
+        # result = self.agent_executor.invoke({"question_title": question.title, "messages": messages, "input": query})
         print('get ask result', result)
         return result.get("output", result.get("result", ""))
 

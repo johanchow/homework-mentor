@@ -2,6 +2,7 @@
 中文老师Agent - 专门负责中文教学指导和答疑
 """
 
+import json
 from typing import Dict, Any, List, Optional
 from .base_agent import BaseAgent
 from langchain.prompts import ChatPromptTemplate
@@ -10,8 +11,9 @@ from langchain.agents import AgentExecutor, create_openai_functions_agent
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 import asyncio
 from datetime import datetime
-from entity.question import Question
 from utils.llm import LLM
+from entity.session import Session
+from entity.message import Message, MessageRole
 
 class ChineseTeacherAgent(BaseAgent):
     """中文老师Agent - 负责中文教学指导和答疑"""
@@ -131,26 +133,15 @@ class ChineseTeacherAgent(BaseAgent):
         }
         return suggestions_map.get(task_type, suggestions_map["general"])
 
-    def process_ask(self, question: Question, messages: List[BaseMessage]) -> str:
+    def process_ask(self, session: Session, latest_message: Message) -> str:
         """处理用户查询 - 使用AgentExecutor"""
-        query = messages[-1].content
-        messages = messages[:-1]
-        result = self.llm.invoke([{
-            "role": "system",
-            "content": "你是一位经验丰富的中文老师，擅长语文教学和指导。"
-        }, {
-            "role": "user",
-            "content": [{
-                "type": "text",
-                "text": "请描述一下这个图片"
-            }, {
-                "type": "image_url",
-                "image_url": {
-                    "url": "https://gips2.baidu.com/it/u=1651586290,17201034&fm=3028&app=3028&f=JPEG&fmt=auto&q=100&size=f600_800"
-                }
-            }]
-        }])
-        # result = self.agent_executor.invoke({"question_title": question.title, "messages": messages, "input": query})
+        prompt_message = Message(role=MessageRole.SYSTEM, content="你是一位经验丰富的中文老师，擅长语文教学和指导。")
+        question_message = session.question.to_message()
+        history_messages = session.get_messages()
+        all_messages = [prompt_message] + [question_message] + history_messages + [latest_message]
+        llm_chat_messages = [msg.to_llm_message() for msg in all_messages]
+        print(json.dumps(llm_chat_messages, indent=2, ensure_ascii=False))
+        result = self.llm.invoke(llm_chat_messages)
         print('get ask result', result)
         return result.get("output", result.get("result", ""))
 

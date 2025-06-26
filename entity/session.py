@@ -10,28 +10,20 @@ class Session:
 
     def __init__(
         self,
+        session_id: str,
         question: Question,
-        session_id: Optional[str] = None,
-        messages: Optional[List[Message]] = None,
-        created_at: Optional[datetime] = None,
-        metadata: Optional[Dict[str, Any]] = None
     ):
         """
         初始化会话
 
         Args:
-            question: 问题对象
-            messages: 消息列表
             session_id: 会话ID，标识当前具体会话
-            created_at: 创建时间
-            metadata: 元数据
+            question: 问题对象
         """
+        self.session_id = session_id
         self.question = question
-        self.messages = messages or []
-        self.session_id = session_id or str(uuid.uuid4())
-        self.created_at = created_at or datetime.now()
-        self.updated_at = self.created_at
-        self.metadata = metadata or {}
+        self.messages = []
+        self.created_at = datetime.now()
 
     def add_message(self, message: Message) -> None:
         """

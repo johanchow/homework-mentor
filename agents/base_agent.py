@@ -12,7 +12,8 @@ import uuid
 from datetime import datetime
 from langchain.chat_models.base import init_chat_model
 from langchain_community.chat_models import ChatTongyi
-from entity.question import Question
+from entity.session import Session
+from entity.message import Message
 
 class AgentState(BaseModel):
     """Agent状态模型"""
@@ -48,7 +49,7 @@ class BaseAgent(ABC):
         )
 
     @abstractmethod
-    def process_ask(self, question: Question, messages: List[BaseMessage]) -> str:
+    def process_ask(self, session: Session, latest_message: Message) -> str:
         """处理用户查询"""
         pass
 

@@ -95,6 +95,95 @@ class Question(BaseModel):
         """转换为字典格式"""
         return self.dict()
 
+    def add_image(self, file_name: str, file_url: str, file_size: Optional[int] = None) -> str:
+        """添加图片文件"""
+        file_id = str(uuid.uuid4())
+        image = MediaFile(
+            file_id=file_id,
+            file_name=file_name,
+            file_url=file_url,
+            file_type="image",
+            file_size=file_size
+        )
+        self.images.append(image)
+        self.updated_at = datetime.now()
+        return file_id
+    
+    def add_audio(self, file_name: str, file_url: str, duration: Optional[float] = None, 
+                  file_size: Optional[int] = None) -> str:
+        """添加音频文件"""
+        file_id = str(uuid.uuid4())
+        audio = MediaFile(
+            file_id=file_id,
+            file_name=file_name,
+            file_url=file_url,
+            file_type="audio",
+            file_size=file_size,
+            duration=duration
+        )
+        self.audios.append(audio)
+        self.updated_at = datetime.now()
+        return file_id
+    
+    def add_video(self, file_name: str, file_url: str, duration: Optional[float] = None,
+                  file_size: Optional[int] = None, thumbnail_url: Optional[str] = None) -> str:
+        """添加视频文件"""
+        file_id = str(uuid.uuid4())
+        video = MediaFile(
+            file_id=file_id,
+            file_name=file_name,
+            file_url=file_url,
+            file_type="video",
+            file_size=file_size,
+            duration=duration,
+            thumbnail_url=thumbnail_url
+        )
+        self.videos.append(video)
+        self.updated_at = datetime.now()
+        return file_id
+    
+    def remove_media(self, file_id: str) -> bool:
+        """移除媒体文件"""
+        # 从图片中移除
+        for i, image in enumerate(self.images):
+            if image.file_id == file_id:
+                self.images.pop(i)
+                self.updated_at = datetime.now()
+                return True
+        
+        # 从音频中移除
+        for i, audio in enumerate(self.audios):
+            if audio.file_id == file_id:
+                self.audios.pop(i)
+                self.updated_at = datetime.now()
+                return True
+        
+        # 从视频中移除
+        for i, video in enumerate(self.videos):
+            if video.file_id == file_id:
+                self.videos.pop(i)
+                self.updated_at = datetime.now()
+                return True
+        
+        return False
+    
+    def get_media_count(self) -> dict:
+        """获取媒体文件统计"""
+        return {
+            "images": len(self.images),
+            "audios": len(self.audios),
+            "videos": len(self.videos),
+            "total": len(self.images) + len(self.audios) + len(self.videos)
+        }
+    
+    def is_multiple_choice(self) -> bool:
+        """判断是否为选择题"""
+        return self.question_type == QuestionType.MULTIPLE_CHOICE
+    
+    def has_media(self) -> bool:
+        """判断是否包含媒体文件"""
+        return bool(self.images or self.audios or self.videos)
+
     def to_message(self, belong_role: MessageRole = MessageRole.USER) -> Message:
         """转换为消息格式"""
         if len(self.images) == 0:
@@ -130,3 +219,54 @@ class Question(BaseModel):
     def __repr__(self) -> str:
         """详细字符串表示"""
         return self.__str__()
+
+
+# 创建问题的工厂函数
+def create_question(
+    subject: Subject,
+    question_type: QuestionType,
+    title: str,
+    content: Optional[str] = None,
+    options: Optional[List[str]] = None,
+    correct_answer: Optional[Union[str, List[str]]] = None,
+    difficulty: Optional[int] = None,
+    points: Optional[int] = None,
+    tags: Optional[List[str]] = None
+) -> Question:
+    """创建问题实例的工厂函数"""
+    return Question(
+        subject=subject,
+        question_type=question_type,
+        title=title,
+        options=options,
+        correct_answer=correct_answer,
+        difficulty=difficulty,
+        points=points,
+        tags=tags or []
+    )
+
+
+# 示例用法
+if __name__ == "__main__":
+    # 创建一个选择题示例
+    question = create_question(
+        subject=Subject.CHINESE,
+        question_type=QuestionType.MULTIPLE_CHOICE,
+        title="下列词语中加点字的读音完全正确的一项是",
+        options=["A", "B", "C", "D"],
+        correct_answer="A",
+        difficulty=3,
+        points=5,
+        tags=["语文", "字音", "选择题"]
+    )
+    
+    # 添加图片
+    question.add_image("题目图片.jpg", "https://example.com/image1.jpg", 1024000)
+    
+    # 添加音频
+    question.add_audio("朗读音频.mp3", "https://example.com/audio1.mp3", 30.5, 2048000)
+    
+    print(question)
+    print(f"媒体文件统计: {question.get_media_count()}")
+    print(f"是否为选择题: {question.is_multiple_choice()}")
+    print(f"是否包含媒体: {question.has_media()}")

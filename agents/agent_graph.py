@@ -5,7 +5,7 @@ from langchain_core.messages import BaseMessage
 from langgraph.graph.graph import CompiledGraph
 from utils.llm import LLM
 from entity.question import Question, Subject, QuestionType, MediaFile
-from entity.message import Message
+from entity.message import Message, MessageRole
 from entity.session import Session
 from .chinese_agent import get_chinese_agent
 from .gossip_agent import get_gossip_agent
@@ -24,8 +24,10 @@ def decide_route(state: AgentState):
 def call_chinese_teacher(state: AgentState):
     print('call_chinese_teacher', state)
     chinese_agent = get_chinese_agent()
-    response = chinese_agent.process_ask(state["session"], state["latest_message"])
-    return {"messages": response}
+    session = state["session"]
+    resp_content = chinese_agent.process_ask(state["session"], state["latest_message"])
+    session.add_message(Message(role=MessageRole.ASSISTANT, content=resp_content))
+    return {"session": session} 
 
 def call_gossip_agent(state: AgentState):
     gossip_agent = get_gossip_agent()
@@ -47,7 +49,7 @@ def create_workflow() -> CompiledGraph:
 
     # Add memory
     memory = MemorySaver()
-    app = graph.compile(checkpointer=memory)
+    app = graph.compile()
     return app
 
 

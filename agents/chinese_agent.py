@@ -140,10 +140,9 @@ class ChineseTeacherAgent(BaseAgent):
         history_messages = session.get_messages()
         all_messages = [prompt_message] + [question_message] + history_messages + [latest_message]
         llm_chat_messages = [msg.to_llm_message() for msg in all_messages]
-        print(json.dumps(llm_chat_messages, indent=2, ensure_ascii=False))
         result = self.llm.invoke(llm_chat_messages)
-        print('get ask result', result)
-        return result.get("output", result.get("result", ""))
+        print('get ask result', result.content)
+        return result.content
 
     def _fallback_process_ask(self, query: str) -> str:
         """回退的查询处理方法"""

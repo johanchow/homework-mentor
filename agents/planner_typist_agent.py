@@ -24,11 +24,17 @@ class TypistAgent(ABC):
         self.system_prompt: Message = Message(role=MessageRole.SYSTEM, content="""
 	用户会可能会传入一段文字、或者若干个图片，里面都应该是多个小学题目。也可能会包含一点杂乱无用的信息。
 
-题目的全部类型有： 选择题(choice)、判断题(judge)、填空题(fill)、问答题(qa)
+题目的全部类型有： 选择题(choice)、判断题(judge)、问答题(qa)
 题目的全部学科有: chinese、math、english、science、social、other
 
-请你帮我提取出全部文字和全部图片中的所有题目。每道题请用以下 JSON 格式输出.
+请你帮我提取出全部文字和全部图片中的所有题目。每道题最多包含以下属性：
+- title: 题目文字，必填
+- subject: 题目学科，必填
+- type: 题目类型，必填
+- images_coords: 题目图片坐标，选填
+- options: 题目选项，只有type为choice时，才需要填写
 
+请返回所有题目的 JSON 列表。
 举例1:
 [题目] 小明有3个苹果，给了小红1个，下面哪个说法正确？ A. 小明还剩2个 B. 小明还剩1个 C. 小红拥有2个 D. 小红拥有3个
 [输出] { "title": "小明有3个苹果，给了小红1个，下面哪个说法正确？", "subject": "math",

@@ -40,30 +40,21 @@ async def test_multimodal_input():
         role=MessageRole.USER,
         content=[
             {
-                "type": "text",
-                "text": "请根据图片中的数学题，回答以下问题："
-            },
-            {
                 "type": "image_url",
                 "image_url": {
-                    "url": "https://example.com/math_question.jpg"
+                    "url": "https://clothing-try-on-1306401232.cos.ap-guangzhou.myqcloud.com/homework-mentor/admin-test.png"
                 }
             },
-            {
-                "type": "text",
-                "text": "A. 10\nB. 15\nC. 20\nD. 25\n答案：B"
-            }
         ]
     )
 
-    result = await agent.process_task("", {"message": message})
-    print(f"处理结果: {result}")
-    print(f"生成题目数量: {result['question_count']}")
+    questions = agent.process_input(message)
+    print(f"生成题目数量: {len(questions)}")
 
-    for i, question in enumerate(result['questions'], 1):
+    for i, question in enumerate(questions, 1):
         print(f"题目{i}: {question.title}")
         print(f"  科目: {question.subject}")
-        print(f"  类型: {question.question_type}")
+        print(f"  类型: {question.type}")
 
     print("✅ 多模态输入测试完成!")
 
@@ -73,8 +64,8 @@ async def main():
     print("🚀 开始测试TypistAgent...")
 
     try:
-        await test_text_input()
-        # await test_multimodal_input()
+        # await test_text_input()
+        await test_multimodal_input()
 
         print("\n🎉 所有测试通过!")
 

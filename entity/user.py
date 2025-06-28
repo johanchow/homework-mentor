@@ -2,8 +2,8 @@
 用户实体类 - 定义用户的基本信息
 """
 
-from typing import Optional
-from sqlmodel import SQLModel, Field, Session, select
+from typing import Optional, List
+from sqlmodel import SQLModel, Field, Relationship
 import uuid
 from datetime import datetime
 
@@ -27,6 +27,8 @@ class User(SQLModel, table=True):
     # 状态信息
     is_active: bool = Field(default=True, description="是否激活")
     is_deleted: bool = Field(default=False, description="是否已删除")
+
+    questions: List['Question'] = Relationship(back_populates="creator")
 
     class Config:
         json_encoders = {

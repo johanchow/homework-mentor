@@ -42,17 +42,19 @@ def get_engine():
     return engine
 
 
+def create_db_and_tables():
+    """创建数据库和表"""
+    engine = get_engine()
+    SQLModel.metadata.create_all(engine)
+    logger.info("数据库表创建完成")
+
+
 def get_session():
     """获取数据库会话"""
     engine = get_engine()
     with Session(engine) as session:
         yield session
 
-def create_db_and_tables():
-    """创建数据库和表"""
-    engine = get_engine()
-    SQLModel.metadata.create_all(engine)
-    logger.info("数据库表创建完成")
 
 # 初始化数据库
 def init_database():

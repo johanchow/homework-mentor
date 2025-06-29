@@ -7,7 +7,6 @@ from sqlmodel import SQLModel, Field, Relationship
 import uuid
 from datetime import datetime
 
-
 class User(SQLModel, table=True):
     """用户实体类"""
 
@@ -29,29 +28,12 @@ class User(SQLModel, table=True):
     is_deleted: bool = Field(default=False, description="是否已删除")
 
     questions: List['Question'] = Relationship(back_populates="creator")
+    papers: List['Paper'] = Relationship(back_populates="creator")
 
     class Config:
         json_encoders = {
             datetime: lambda v: v.isoformat()
         }
-
-    def to_dict(self) -> dict:
-        """转换为字典格式"""
-        return self.dict()
-
-    @classmethod
-    def from_dict(cls, data: dict) -> 'User':
-        """从字典创建用户实例"""
-        return cls(**data)
-
-    def __str__(self) -> str:
-        """字符串表示"""
-        return f"User(id={self.id}, name='{self.name}')"
-
-    def __repr__(self) -> str:
-        """详细字符串表示"""
-        return self.__str__()
-
 
 # 创建用户的工厂函数
 def create_user(

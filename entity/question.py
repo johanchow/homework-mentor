@@ -69,11 +69,6 @@ class Question(SQLModel, table=True):
         }
         use_enum_values = True
 
-    def to_dict(self) -> dict:
-        """转换为字典格式"""
-        question_dict = self.dict()
-        return question_dict
-
     def to_message(self, belong_role: MessageRole = MessageRole.USER) -> Message:
         """转换为消息格式"""
         images_list = self.get_images_list()
@@ -97,19 +92,6 @@ class Question(SQLModel, table=True):
                     }
                 }]
             )
-
-    @classmethod
-    def from_dict(cls, data: dict) -> 'Question':
-        """从字典创建问题实例"""
-        return cls(**data)
-
-    def __str__(self) -> str:
-        """字符串表示"""
-        return f"Question(id={self.id}, subject={self.subject}, type={self.type}, title='{self.title[:50]}...')"
-
-    def __repr__(self) -> str:
-        """详细字符串表示"""
-        return self.__str__()
 
 
 # 创建问题的工厂函数

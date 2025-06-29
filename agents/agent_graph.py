@@ -4,7 +4,7 @@ from langgraph.graph import START, MessagesState, StateGraph
 from langchain_core.messages import BaseMessage
 from langgraph.graph.graph import CompiledGraph
 from utils.llm import LLM
-from entity.question import Question, Subject, QuestionType, MediaFile
+from entity.question import Question, Subject, QuestionType
 from entity.message import Message, MessageRole
 from entity.session import Session
 from .chinese_agent import get_chinese_agent
@@ -27,7 +27,7 @@ def call_chinese_teacher(state: AgentState):
     session = state["session"]
     resp_content = chinese_agent.process_ask(state["session"], state["latest_message"])
     session.add_message(Message(role=MessageRole.ASSISTANT, content=resp_content))
-    return {"session": session} 
+    return {"session": session}
 
 def call_gossip_agent(state: AgentState):
     gossip_agent = get_gossip_agent()
@@ -62,10 +62,9 @@ if __name__ == "__main__":
         subject=Subject.CHINESE,
         question_type=QuestionType.MULTIPLE_CHOICE,
         title="请描述下面图片内容",
-        images=[MediaFile(
-            file_id="123",
-            file_url="https://gips2.baidu.com/it/u=1651586290,17201034&fm=3028&app=3028&f=JPEG&fmt=auto&q=100&size=f600_800",
-        )]
+        images=[
+            "https://gips2.baidu.com/it/u=1651586290,17201034&fm=3028&app=3028&f=JPEG&fmt=auto&q=100&size=f600_800",
+        ]
     )
     session = Session(session_id="1234567890", question=question)
     message1 = Message.from_dict({

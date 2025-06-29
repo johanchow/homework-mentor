@@ -10,17 +10,17 @@ class Session:
 
     def __init__(
         self,
-        session_id: str,
+        id: str,
         question: Question,
     ):
         """
         初始化会话
 
         Args:
-            session_id: 会话ID，标识当前具体会话
+            id: 会话ID，标识当前具体会话
             question: 问题对象
         """
-        self.session_id = session_id
+        self.id = id
         self.question = question
         self.messages = []
         self.created_at = datetime.now()
@@ -145,7 +145,7 @@ class Session:
             会话摘要信息
         """
         return {
-            "session_id": self.session_id,
+            "id": self.id,
             "question": self.get_question_summary(),
             "total_messages": self.get_message_count(),
             "user_messages": len(self.get_user_messages()),
@@ -158,7 +158,7 @@ class Session:
     def to_dict(self) -> Dict[str, Any]:
         """转换为字典格式"""
         return {
-            "session_id": self.session_id,
+            "id": self.id,
             "question": self.question.to_dict(),
             "messages": [msg.to_dict() for msg in self.messages],
             "created_at": self.created_at.isoformat(),
@@ -177,15 +177,15 @@ class Session:
         return cls(
             question=question,
             messages=messages,
-            session_id=data.get("session_id"),
+            id=data.get("id"),
             created_at=datetime.fromisoformat(data["created_at"]) if data.get("created_at") else None,
             metadata=data.get("metadata", {})
         )
 
     def __str__(self) -> str:
         """字符串表示"""
-        return f"Session(session_id={self.session_id}, messages={len(self.messages)}, question='{self.question.title[:50]}...')"
+        return f"Session(id={self.id}, messages={len(self.messages)}, question='{self.question.title[:50]}...')"
 
     def __repr__(self) -> str:
         """详细字符串表示"""
-        return f"Session(session_id={self.session_id}, question_id={self.question.id}, messages_count={len(self.messages)})"
+        return f"Session(id={self.id}, question_id={self.question.id}, messages_count={len(self.messages)})"

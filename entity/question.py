@@ -7,6 +7,7 @@ from sqlmodel import SQLModel, Field, Session, select, Relationship
 from enum import Enum
 import uuid
 from datetime import datetime
+from entity.base import BaseModel
 from entity.message import Message, MessageRole
 from entity.user import User
 
@@ -34,7 +35,7 @@ class Subject(str, Enum):
     OTHER = "other"        # 其他
 
 
-class Question(SQLModel, table=True):
+class Question(BaseModel, table=True):
     """问题实体类"""
 
     # 基本信息

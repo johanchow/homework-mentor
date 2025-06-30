@@ -1,8 +1,10 @@
+import uuid
 from typing import Dict, List, Optional, Union, Any
 from enum import Enum
 import json
 import base64
 from datetime import datetime
+from pydantic import BaseModel, Field
 
 
 class MessageType(Enum):
@@ -21,35 +23,26 @@ class MessageRole(Enum):
     SYSTEM = "system"
 
 
-class Message:
+class Message(BaseModel):
     """绘画消息类，支持多种媒体类型"""
 
-    def __init__(
-        self,
-        role: Union[MessageRole, str],
-        content: Union[str, List[Dict[str, Any]]],
-        message_type: MessageType = MessageType.TEXT,
-        timestamp: Optional[datetime] = None,
-        message_id: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None
-    ):
-        """
-        初始化消息
+    # 消息ID
+    id: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()), primary_key=True, description="消息唯一标识")
 
-        Args:
-            role: 消息角色 (user/assistant/system)
-            content: 消息内容，可以是文本或多媒体内容列表
-            message_type: 消息类型
-            timestamp: 时间戳
-            message_id: 消息ID
-            metadata: 元数据
-        """
-        self.role = MessageRole(role) if isinstance(role, str) else role
-        self.content = content
-        self.message_type = message_type
-        self.timestamp = timestamp or datetime.now()
-        self.message_id = message_id
-        self.metadata = metadata or {}
+    # 消息角色
+    role: MessageRole = Field(..., description="消息角色")
+
+    # 消息内容 
+    content: Union[str, List[Dict[str, Any]]] = Field(..., description="消息内容")
+
+    # 消息类型
+    message_type: MessageType = Field(..., description="消息类型")
+
+    # 时间戳
+    timestamp: datetime = Field(default_factory=datetime.now, description="时间戳")
+
+    # 元数据
+    metadata: Optional[Dict[str, Any]] = Field(default=None, description="元数据")
 
     def add_text_content(self, text: str) -> None:
         """添加文本内容"""
@@ -212,11 +205,11 @@ class Message:
     def to_dict(self) -> Dict[str, Any]:
         """转换为字典格式"""
         return {
+            "id": self.id,
             "role": self.role.value,
             "content": self.content,
             "message_type": self.message_type.value,
             "timestamp": self.timestamp.isoformat(),
-            "message_id": self.message_id,
             "metadata": self.metadata
         }
 
@@ -228,7 +221,7 @@ class Message:
             content=data.get("content", ""),
             message_type=MessageType(data.get("message_type", "text")),
             timestamp=datetime.fromisoformat(data["timestamp"]) if data.get("timestamp") else None,
-            message_id=data.get("message_id"),
+            id=data.get("id"),
             metadata=data.get("metadata", {})
         )
 
@@ -240,3 +233,19 @@ class Message:
     def __repr__(self) -> str:
         """详细字符串表示"""
         return f"Message(role={self.role.value}, content={self.content}, message_type={self.message_type.value}, timestamp={self.timestamp})"
+
+
+def create_message(
+    role: MessageRole,
+    content: Union[str, List[Dict[str, Any]]],
+    message_type: MessageType = MessageType.TEXT,
+    timestamp: Optional[datetime] = datetime.now(),
+    metadata: Optional[Dict[str, Any]] = None
+) -> Message:
+    """创建消息实例的工厂函数"""
+    return Message(
+        role=role,
+        content=content,
+        message_type=message_type,
+        timestamp=timestamp,
+        metadata=metadata)

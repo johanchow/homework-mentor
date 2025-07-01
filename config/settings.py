@@ -12,7 +12,7 @@ class Settings(BaseSettings):
 
     # API配置
     API_HOST: str = "0.0.0.0"
-    API_PORT: int = 5000
+    API_PORT: int = 5555
     API_DEBUG: bool = False
 
     # LLM配置

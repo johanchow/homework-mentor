@@ -28,6 +28,7 @@ def register():
             if not data.get(field):
                 return jsonify({'error': f'缺少必需字段: {field}'}), 400
 
+        name, password, phone = None, None, None
         if mode == 'name':
             name = data.get('name')
             password = data.get('password')
@@ -49,7 +50,7 @@ def register():
         )
 
         # 保存到数据库
-        saved_user = user_dao.create_user(user)
+        saved_user = user_dao.create(user)
 
         # 生成token
         token = generate_token(saved_user.id, saved_user.name)
@@ -62,7 +63,7 @@ def register():
         }), 201
 
     except Exception as e:
-        logger.error(f"用户注册失败: {e}")
+        logger.exception(f"用户注册失败: {e}")
         return jsonify({'error': '注册失败，请稍后重试'}), 500
 
 

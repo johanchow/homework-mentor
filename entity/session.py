@@ -1,8 +1,8 @@
 from typing import List, Optional, Dict, Any
 from datetime import datetime
-import uuid
 from .message import Message, MessageRole
 from .question import Question
+from utils.helpers import random_uuid
 
 
 class Session:
@@ -49,7 +49,7 @@ class Session:
         message = Message(
             role=MessageRole.USER,
             content=content,
-            message_id=str(uuid.uuid4())
+            message_id=random_uuid()
         )
         self.add_message(message)
         return message
@@ -68,7 +68,7 @@ class Session:
         message = Message(
             role=MessageRole.ASSISTANT,
             content=content,
-            message_id=str(uuid.uuid4())
+            message_id=random_uuid()
         )
         self.add_message(message)
         return message

@@ -18,44 +18,6 @@ logger = logging.getLogger(__name__)
 class PaperDAO(BaseDao):
     """试卷数据访问对象"""
 
-    def create(self, paper: Paper) -> Paper:
-        """创建试卷"""
-        try:
-            with Session(self.engine) as session:
-                session.add(paper)
-                session.commit()
-                session.refresh(paper)
-                logger.info(f"创建试卷成功: {paper.id}")
-                return paper
-        except Exception as e:
-            logger.error(f"创建试卷失败: {e}")
-            raise
-
-    def update(self, paper: Paper) -> Paper:
-        """更新试卷"""
-        try:
-            with Session(self.engine) as session:
-                session.add(paper)
-                session.commit()
-                session.refresh(paper)
-                logger.info(f"更新试卷成功: {paper.id}")
-                return paper
-        except Exception as e:
-            logger.error(f"更新试卷失败: {e}")
-            raise
-
-    def delete(self, paper: Paper) -> Paper:
-        """删除试卷"""
-        try:
-            with Session(self.engine) as session:
-                session.delete(paper)
-                session.commit()
-                logger.info(f"删除试卷成功: {paper.id}")
-                return paper
-        except Exception as e:
-            logger.error(f"删除试卷失败: {e}")
-            raise
-
     def get_by_id(self, paper_id: str) -> Optional[Paper]:
         """根据ID获取试卷"""
         return self._get_by_id(Paper, paper_id)

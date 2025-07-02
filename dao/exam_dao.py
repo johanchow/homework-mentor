@@ -66,20 +66,5 @@ class ExamDAO(BaseDao):
             logger.error(f"获取考试详细信息失败 (ID: {exam_id}): {e}")
             raise
 
-    def update_answer(self, exam_id: str, answer: Answer) -> Exam:
-        """更新考试答卷"""
-        try:
-            exam = self.get_by_id(exam_id)
-            if not exam:
-                raise ValueError(f"考试不存在: {exam_id}")
-
-            exam.answer_json = answer.model_dump_json()
-            exam.updated_at = datetime.now()
-
-            return self.update(exam)
-        except Exception as e:
-            logger.error(f"更新考试答卷失败 (ID: {exam_id}): {e}")
-            raise
-
 # 创建全局DAO实例
 exam_dao = ExamDAO()

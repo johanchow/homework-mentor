@@ -28,17 +28,20 @@ def register():
             if not data.get(field):
                 return jsonify({'error': f'缺少必需字段: {field}'}), 400
 
+        name, password, phone = None, None, None
         if mode == 'name':
             name = data.get('name')
             password = data.get('password')
             # 验证密码长度
             if len(password) < 8:
                 return jsonify({'error': '密码长度至少8位'}), 400
+            if user_dao.get_by_name(name) is not None:
+                return jsonify({'error': '用户名已被注册'}), 409
         else:
             phone = data.get('phone')
             verify_code = data.get('verify_code')
             # 检查手机号是否已存在（如果提供）
-            if user_dao.check_phone_exists(phone):
+            if user_dao.get_by_phone(phone) is not None:
                 return jsonify({'error': '手机号已被注册'}), 409
 
         # 创建用户
@@ -49,7 +52,7 @@ def register():
         )
 
         # 保存到数据库
-        saved_user = user_dao.create_user(user)
+        saved_user = user_dao.create(user)
 
         # 生成token
         token = generate_token(saved_user.id, saved_user.name)
@@ -62,7 +65,7 @@ def register():
         }), 201
 
     except Exception as e:
-        logger.error(f"用户注册失败: {e}")
+        logger.exception(f"用户注册失败: {e}")
         return jsonify({'error': '注册失败，请稍后重试'}), 500
 
 
@@ -127,27 +130,6 @@ def get_user_profile():
     except Exception as e:
         logger.error(f"获取用户信息失败: {e}")
         return jsonify({'error': '获取用户信息失败'}), 500
-
-
-@user_bp.route('/check-name', methods=['POST'])
-def check_name_exists():
-    """检查用户名是否已存在"""
-    try:
-        data = request.get_json()
-
-        if not data.get('name'):
-            return jsonify({'error': '缺少用户名'}), 400
-
-        name = data.get('name')
-        exists = user_dao.check_name_exists(name)
-
-        return jsonify({
-            'exists': exists
-        }), 200
-
-    except Exception as e:
-        logger.error(f"检查邮箱失败: {e}")
-        return jsonify({'error': '检查失败，请稍后重试'}), 500
 
 
 @user_bp.route('/check-phone', methods=['POST'])

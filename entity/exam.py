@@ -2,32 +2,22 @@
 考试实体类 - 定义考试的基本结构和属性
 """
 
-import uuid
 import json
-from typing import List, Optional, Dict
-from sqlmodel import SQLModel, Field, Relationship
+from datetime import datetime
+from typing import Optional
+from sqlmodel import Field, Relationship
 from entity.base import BaseModel
-from entity.paper import Paper
-from entity.user import User
 from entity.message import Message
 from entity.question import Question
-from datetime import datetime
+from utils.helpers import random_uuid
+from entity.answer import Answer
 
-
-class Answer(BaseModel):
-    """答卷实体类"""
-    # 问题
-    question: List[Question] = Field(..., description="问题列表")
-    # 对话信息
-    messages: Dict[str, List[Message]] = Field(..., description="对话信息")
-    # 答案
-    answer: Dict[str, str] | None = Field(default=None, description="答案")
 
 class Exam(BaseModel, table=True):
     """考试实体类"""
 
     # 基本信息
-    id: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()), primary_key=True, description="试卷唯一标识")
+    id: Optional[str] = Field(default_factory=lambda: random_uuid(), primary_key=True, description="试卷唯一标识")
 
     # 试卷ID列表
     paper_id: str = Field(..., description="试卷ID", foreign_key="paper.id")
@@ -62,8 +52,6 @@ class Exam(BaseModel, table=True):
             return Answer(**a)
         except Exception as e:
             raise ValueError(f"答卷解析失败: {e}")
-
-
 
 
 # 创建考试的工厂函数

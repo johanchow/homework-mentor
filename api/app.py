@@ -7,6 +7,9 @@ from flask_cors import CORS
 from config.settings import settings
 from utils.helpers import setup_logging
 from .user_api import user_bp
+from .question_api import question_bp
+from .paper_api import paper_bp
+from .exam_api import exam_bp
 
 
 def create_app():
@@ -18,9 +21,21 @@ def create_app():
 
     # 注册蓝图
     app.register_blueprint(user_bp)
+    app.register_blueprint(question_bp)
+    app.register_blueprint(paper_bp)
+    app.register_blueprint(exam_bp)
 
     # 设置日志
     logger = setup_logging()
+
+    @app.route('/api/health')
+    def health_check():
+        """健康检查端点"""
+        return {
+            "status": "healthy",
+            "service": "Homework Mentor API",
+            "version": "1.0.0"
+        }
 
     @app.route('/')
     def index():

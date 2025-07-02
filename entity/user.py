@@ -8,12 +8,13 @@ import uuid
 from datetime import datetime
 import hashlib
 import os
+from utils.helpers import random_uuid
 
 class User(SQLModel, table=True):
     """用户实体类"""
 
     # 基本信息
-    id: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()), primary_key=True, description="用户唯一标识")
+    id: Optional[str] = Field(default_factory=lambda: random_uuid(), primary_key=True, description="用户唯一标识")
     name: str = Field(..., description="用户姓名")
     password: str = Field(..., description="密码")
 

@@ -8,12 +8,12 @@ from pydantic import BaseModel
 from langchain.schema import BaseMessage
 from langchain_openai import ChatOpenAI
 import asyncio
-import uuid
 from datetime import datetime
 from langchain.chat_models.base import init_chat_model
 from langchain_community.chat_models import ChatTongyi
 from entity.session import Session
 from entity.message import Message
+from utils.helpers import random_uuid
 
 class AgentState(BaseModel):
     """Agent状态模型"""
@@ -31,7 +31,7 @@ class BaseAgent(ABC):
     """基础Agent抽象类"""
 
     def __init__(self, agent_id: Optional[str] = None, **kwargs):
-        self.agent_id = agent_id or str(uuid.uuid4())
+        self.agent_id = agent_id or random_uuid()
         self.agent_type = self.__class__.__name__
         self.llm = ChatTongyi()
         # self.llm = init_chat_model("deepseek-r1", model_provider="deepseek")

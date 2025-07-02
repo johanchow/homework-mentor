@@ -5,9 +5,10 @@
 from typing import List, Optional, Union
 from sqlmodel import SQLModel, Field, Session, select, Relationship
 from enum import Enum
-import uuid
 from datetime import datetime
 from entity.base import BaseModel
+import json
+from utils.helpers import random_uuid
 from entity.message import Message, MessageRole
 from entity.user import User
 
@@ -39,7 +40,7 @@ class Question(BaseModel, table=True):
     """问题实体类"""
 
     # 基本信息
-    id: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()), primary_key=True, description="问题唯一标识")
+    id: Optional[str] = Field(default_factory=lambda: random_uuid(), primary_key=True, description="问题唯一标识")
     subject: Subject = Field(..., description="科目")
     type: QuestionType = Field(..., description="问题类型")
     title: str = Field(..., description="题干")
@@ -94,6 +95,30 @@ class Question(BaseModel, table=True):
                 }]
             )
 
+    def get_images_list(self) -> List[str]:
+        """获取图片列表"""
+        if self.images:
+            return [img.strip() for img in self.images.split(',') if img.strip()]
+        return []
+
+    def get_audios_list(self) -> List[str]:
+        """获取音频列表"""
+        if self.audios:
+            return [audio.strip() for audio in self.audios.split(',') if audio.strip()]
+        return []
+
+    def get_videos_list(self) -> List[str]:
+        """获取视频列表"""
+        if self.videos:
+            return [video.strip() for video in self.videos.split(',') if video.strip()]
+        return []
+
+    def get_options_list(self) -> List[str]:
+        """获取选项列表"""
+        if self.options:
+            return json.loads(self.options)
+        return []
+
 
 # 创建问题的工厂函数
 def create_question(
@@ -114,7 +139,7 @@ def create_question(
         creator_id=creator_id,
     )
     if options:
-        question.options = ",".join(options)
+        question.options = json.dumps(options)
     if images:
         question.images = ",".join(images)
     if audios:

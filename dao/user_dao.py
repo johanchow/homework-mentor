@@ -69,15 +69,6 @@ class UserDAO(BaseDao):
             logger.error(f"用户认证失败 (phone: {phone}): {e}")
             raise
 
-    def check_phone_exists(self, phone: str) -> bool:
-        """检查手机号是否已存在"""
-        try:
-            user = self.get_by_phone(phone)
-            return user is not None
-        except Exception as e:
-            logger.error(f"检查手机号是否存在失败 (phone: {phone}): {e}")
-            raise
-
 
 # 创建全局DAO实例
 user_dao = UserDAO()

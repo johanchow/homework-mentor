@@ -4,19 +4,19 @@
 
 from typing import List, Optional, ClassVar
 from sqlmodel import SQLModel, Field, Relationship
-import uuid
 from entity.base import BaseModel
 from datetime import datetime
 from pydantic import PrivateAttr
 from .question import Question
 from .user import User
+from utils.helpers import random_uuid
 
 
 class Paper(BaseModel, table=True):
     """试卷实体类"""
 
     # 基本信息
-    id: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()), primary_key=True, description="试卷唯一标识")
+    id: Optional[str] = Field(default_factory=lambda: random_uuid(), primary_key=True, description="试卷唯一标识")
     title: str = Field(..., description="试卷标题")
     description: Optional[str] = Field(default=None, description="试卷描述")
 

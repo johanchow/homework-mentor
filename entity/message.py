@@ -1,10 +1,10 @@
-import uuid
 from typing import Dict, List, Optional, Union, Any
 from enum import Enum
 import json
 import base64
 from datetime import datetime
 from pydantic import BaseModel, Field
+from utils.helpers import random_uuid
 
 
 class MessageType(Enum):
@@ -27,12 +27,12 @@ class Message(BaseModel):
     """绘画消息类，支持多种媒体类型"""
 
     # 消息ID
-    id: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()), primary_key=True, description="消息唯一标识")
+    id: Optional[str] = Field(default_factory=lambda: random_uuid(), primary_key=True, description="消息唯一标识")
 
     # 消息角色
     role: MessageRole = Field(..., description="消息角色")
 
-    # 消息内容 
+    # 消息内容
     content: Union[str, List[Dict[str, Any]]] = Field(..., description="消息内容")
 
     # 消息类型

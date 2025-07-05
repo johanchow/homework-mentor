@@ -17,8 +17,26 @@ def create_app():
     """创建Flask应用"""
     app = Flask(__name__)
 
-    # 配置CORS
-    CORS(app, resources={r"/api/*": {"origins": "*"}})
+    # 配置CORS - 允许所有路径的跨域访问
+    CORS(app, 
+         resources={
+             r"/*": {
+                 "origins": "*",  # 允许所有来源
+                 "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],  # 允许的HTTP方法
+                 "allow_headers": ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin"],  # 允许的请求头
+                 "expose_headers": ["Content-Type", "Authorization"],  # 暴露的响应头
+                 "supports_credentials": True,  # 支持携带凭证
+                 "max_age": 86400  # 预检请求缓存时间（秒）
+             }
+         },
+         # 全局CORS配置
+         origins="*",  # 允许所有来源
+         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],  # 允许的HTTP方法
+         allow_headers=["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin"],  # 允许的请求头
+         expose_headers=["Content-Type", "Authorization"],  # 暴露的响应头
+         supports_credentials=True,  # 支持携带凭证
+         max_age=86400  # 预检请求缓存时间（秒）
+    )
 
     # 注册蓝图
     app.register_blueprint(user_bp)

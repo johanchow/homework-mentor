@@ -24,11 +24,15 @@ class ExamDAO(BaseDao):
 
     def search_by_kwargs(self, kwargs: dict, skip: int = 0, limit: int = 100) -> List[Exam]:
         """根据关键字搜索考试"""
-        return self._search_by_kwargs(Exam, kwargs, skip, limit)
+        # 考试实体通常不需要模糊匹配，使用相等匹配
+        fuzzy_fields = []
+        return self._search_by_kwargs(Exam, kwargs, skip, limit, fuzzy_fields)
 
     def count_by_kwargs(self, kwargs: dict) -> int:
         """根据关键字统计考试数量"""
-        return self._count_by_kwargs(Exam, kwargs)
+        # 考试实体通常不需要模糊匹配，使用相等匹配
+        fuzzy_fields = []
+        return self._count_by_kwargs(Exam, kwargs, fuzzy_fields)
 
     def list_exams_by_paper_id(self, paper_id: str, skip: int = 0, limit: int = 100) -> List[Exam]:
         """根据试卷ID获取考试列表"""

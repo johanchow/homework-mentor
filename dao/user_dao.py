@@ -20,10 +20,14 @@ class UserDAO(BaseDao):
 
     def search_by_kwargs(self, kwargs: dict, skip: int = 0, limit: int = 100) -> List[User]:
         """搜索用户"""
-        return self._search_by_kwargs(User, kwargs, skip, limit)
+        # 定义需要模糊匹配的字段
+        fuzzy_fields = ['name', 'email']
+        return self._search_by_kwargs(User, kwargs, skip, limit, fuzzy_fields)
 
     def count_by_kwargs(self, kwargs: dict) -> int:
-        return self._count_by_kwargs(User, kwargs)
+        # 定义需要模糊匹配的字段
+        fuzzy_fields = ['name', 'email']
+        return self._count_by_kwargs(User, kwargs, fuzzy_fields)
 
     def get_by_name(self, name: str) -> Optional[User]:
         """根据用户名获取用户"""

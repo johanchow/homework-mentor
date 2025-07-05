@@ -13,10 +13,14 @@ class QuestionDAO(BaseDao):
         return self._get_by_id(Question, id)
 
     def search_by_kwargs(self, kwargs: dict, skip: int = 0, limit: int = 100) -> List[Question]:
-        return self._search_by_kwargs(Question, kwargs, skip, limit)
+        # 定义需要模糊匹配的字段
+        fuzzy_fields = ['title']
+        return self._search_by_kwargs(Question, kwargs, skip, limit, fuzzy_fields)
 
     def count_by_kwargs(self, kwargs: dict) -> int:
-        return self._count_by_kwargs(Question, kwargs)
+        # 定义需要模糊匹配的字段
+        fuzzy_fields = ['title']
+        return self._count_by_kwargs(Question, kwargs, fuzzy_fields)
 
 # 全局DAO实例
 question_dao = QuestionDAO()

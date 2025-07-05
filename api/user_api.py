@@ -60,8 +60,10 @@ def register():
         return jsonify({
             'code': 0,
             'message': '注册成功',
-            'user': saved_user.to_dict(),
-            'token': token
+            'data': {
+                'user': saved_user.to_dict(),
+                'token': token
+            }
         }), 201
 
     except Exception as e:
@@ -103,8 +105,10 @@ def login():
         return jsonify({
             'code': 0,
             'message': '登录成功',
-            'user': user.to_dict(),
-            'token': token
+            'data': {
+                'user': user.to_dict(),
+                'token': token
+            }
         }), 200
 
     except Exception as e:
@@ -124,7 +128,11 @@ def get_user_profile():
             return jsonify({'error': '用户不存在'}), 404
 
         return jsonify({
-            'user': user.to_dict()
+            'code': 0,
+            'message': '获取用户信息成功',
+            'data': {
+                'user': user.to_dict()
+            }
         }), 200
 
     except Exception as e:
@@ -145,7 +153,11 @@ def check_phone_exists():
         exists = user_dao.check_phone_exists(phone)
 
         return jsonify({
-            'exists': exists
+            'code': 0,
+            'message': '检查手机号成功',
+            'data': {
+                'exists': exists
+            }
         }), 200
 
     except Exception as e:
@@ -158,5 +170,6 @@ def check_phone_exists():
 def logout():
     """用户登出（客户端删除token即可）"""
     return jsonify({
+        'code': 0,
         'message': '登出成功'
     }), 200

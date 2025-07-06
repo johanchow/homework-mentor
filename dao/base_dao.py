@@ -55,6 +55,18 @@ class BaseDao(ABC):
             logger.error(f"删除{model.__class__.__name__}失败: {e}")
             raise
 
+    def batch_create(self, models: List['BaseModel']):
+        try:
+            with Session(self.engine) as session:
+                session.add_all(models)
+                session.commit()
+                for model in models:
+                    session.refresh(model)
+                return models
+        except Exception as e:
+            logger.error(f"批量创建{models[0].__class__.__name__}失败: {e}")
+            raise
+
     @abstractmethod
     def get_by_id(self, id: str) -> 'BaseModel':
         pass

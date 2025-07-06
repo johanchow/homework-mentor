@@ -41,7 +41,7 @@ class Goal(BaseModel, table=True):
     name: str = Field(..., description="目标名称")
     subject: Subject = Field(..., description="科目")
     status: GoalStatus = Field(default=GoalStatus.PREPARING, description="目标状态")
-    ai_prompt: str = Field(..., description="AI提示词")
+    ai_prompt: Optional[str] = Field(default=None, description="AI提示词")
 
     # 时间信息
     created_at: datetime = Field(default_factory=datetime.now, description="创建时间")

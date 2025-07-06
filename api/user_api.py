@@ -130,9 +130,7 @@ def get_user_profile():
         return jsonify({
             'code': 0,
             'message': '获取用户信息成功',
-            'data': {
-                'user': user.to_dict()
-            }
+            'data': user.to_dict()
         }), 200
 
     except Exception as e:

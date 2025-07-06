@@ -27,7 +27,6 @@ def goal_to_response(goal: Goal) -> dict:
         "creator_id": goal.creator_id,
         "created_at": goal.created_at.isoformat(),
         "updated_at": goal.updated_at.isoformat(),
-        "is_active": goal.is_active,
         "is_deleted": goal.is_deleted
     }
 
@@ -70,7 +69,7 @@ def create_goal_api():
         goal = create_goal(
             name=data['name'],
             subject=data['subject'],
-            ai_prompt=data['ai_prompt'],
+            ai_prompt=data.get('ai_prompt', None),
             creator_id=data['creator_id'],
             status=data.get('status', GoalStatus.PREPARING)
         )
@@ -82,7 +81,7 @@ def create_goal_api():
         return jsonify({
             'code': 0,
             'message': '目标创建成功',
-            'goal': goal_to_response(created_goal)
+            'data': goal_to_response(created_goal)
         }), 201
 
     except Exception as e:

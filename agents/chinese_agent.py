@@ -13,7 +13,7 @@ import asyncio
 from datetime import datetime
 from utils.llm import LLM
 from entity.session import Session
-from entity.message import Message, MessageRole
+from entity.message import Message, MessageRole, create_message
 
 class ChineseTeacherAgent(BaseAgent):
     """中文老师Agent - 负责中文教学指导和答疑"""
@@ -24,48 +24,18 @@ class ChineseTeacherAgent(BaseAgent):
         self.conversation_history: List[Dict[str, Any]] = []
         self.current_session_id: Optional[str] = None
         self.llm = LLM.get_image_llm()
-
-        # 初始化AgentExecutor
-        self._init_agent()
-
-    def _init_agent(self):
-        """初始化AgentExecutor"""
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", """你是一位经验丰富的中文老师，擅长语文教学和指导。
-
-你的教学特点：
-1. 注重方法指导，不仅给出答案，更要教会学生思考方法
-2. 提供原则性的指导，帮助学生建立正确的学习思维
-3. 结合具体例子，让抽象的概念变得具体易懂
-4. 鼓励学生独立思考，培养自主学习能力
-5. 关注学生的个体差异，提供个性化的建议
-
-当学生提出语文题目或问题时，你需要：
-1. 仔细分析题目内容和学生问题
-2. 理解问题的核心和难点
-3. 提供解决问题的思路和方法
-4. 解释相关的语文学习原则
-5. 用具体例子说明
-
-请针对用户的问题，进行解答提示。"""),
-            MessagesPlaceholder(variable_name="messages"),
-            MessagesPlaceholder("agent_scratchpad"),  # 必须有这个，LangChain内部把执行记录写入到这个变量
-            {
-                "role": "human",
-                "content": [{
-                    "type": "image",
-                    "image_url": {
-                        "url": "https://gips2.baidu.com/it/u=1651586290,17201034&fm=3028&app=3028&f=JPEG&fmt=auto&q=100&size=f600_800"
-                    }
-                }, {
-                    "type": "text",
-                    "text": "{input}"
-                }]
-            }
-        ])
-
-        agent = create_openai_functions_agent(self.llm, tools=[], prompt=prompt)
-        self.agent_executor = AgentExecutor(agent=agent, tools=[])
+        self.generate_prompt = create_message(role=MessageRole.SYSTEM, content='''
+        你是一个教育类AI题库生成器。请根据下面的系统要求，还有后面用户的要求，生成 {N} 道与语文相关的题目。题目的类型可以包括：
+填空题(blank)、选择题(choice)、问答题(qa)
+每道题请按如下 JSON 格式返回，所有题目返回为一个 JSON 数组。具体字段说明如下：
+{
+  "title": "题目文字，必填",
+  "subject": "chinese",
+  "type": "题目类型，必填，如 'choice', 'blank', 'qa'",
+  "options": [ "选项A", "选项B", "选项C", "选项D" ] // 仅在 type 为 'choice' 时必填
+}
+        ''')
+        self.ask_prompt = ''
 
     def process_ask(self, session: Session, latest_message: Message) -> str:
         """处理用户查询 - 使用AgentExecutor"""
@@ -78,6 +48,15 @@ class ChineseTeacherAgent(BaseAgent):
         print('get ask result', result.content)
         return result.content
 
+    def _generate_questions(self, session: Session, latest_message: Message) -> str:
+        history_messages = session.get_messages_list()
+        all_messages = [self.generate_prompt] + history_messages + [latest_message]
+        llm_chat_messages = [msg.to_llm_message() for msg in all_messages]
+        result = self.llm.invoke(llm_chat_messages)
+        print('generate result', result.content)
+        return result.content
+
+        
     def _fallback_process_ask(self, query: str) -> str:
         """回退的查询处理方法"""
         messages = [

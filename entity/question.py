@@ -4,6 +4,7 @@
 
 from typing import List, Optional, Union
 from sqlmodel import SQLModel, Field, Session, select, Relationship
+import logging
 from enum import Enum
 from datetime import datetime
 from entity.base import BaseModel
@@ -12,6 +13,7 @@ from utils.helpers import random_uuid
 from entity.message import Message, MessageRole
 from entity.user import User
 
+logger = logging.getLogger(__name__)
 
 class QuestionType(str, Enum):
     """问题类型枚举"""
@@ -94,6 +96,29 @@ class Question(BaseModel, table=True):
                     }
                 }]
             )
+
+    def to_dict(self) -> dict:
+        """转换为字典格式"""
+        try:
+            options = json.loads(self.options) if self.options else []
+        except Exception as e:
+            logger.exception(f"转换问题选项失败: {e}")
+            options = ["__invalid__"]
+
+        return {
+            "id": self.id if self.id else None,
+            "subject": self.subject,
+            "type": self.type,
+            "title": self.title,
+            "options": options if options else [],
+            "images": self.images.split(',') if self.images else [],
+            "audios": self.audios.split(',') if self.audios else [],
+            "videos": self.videos.split(',') if self.videos else [],
+            "creator_id": self.creator_id if self.creator_id else None,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "is_deleted": self.is_deleted
+        }
 
     def get_images_list(self) -> List[str]:
         """获取图片列表"""

@@ -2,6 +2,7 @@
 基础Agent类 - 定义所有Agent的通用接口和功能
 """
 
+import json
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional, List
 from pydantic import BaseModel
@@ -12,9 +13,10 @@ from datetime import datetime
 from langchain.chat_models.base import init_chat_model
 from langchain_community.chat_models import ChatTongyi
 from entity.session import Session
-from entity.message import Message
+from entity.message import Message, create_message, MessageRole
+from entity.question import Question
+from utils.transformer import markdown_to_json
 from utils.helpers import random_uuid
-
 class AgentState(BaseModel):
     """Agent状态模型"""
     agent_id: str
@@ -32,6 +34,10 @@ class BaseAgent(ABC):
 
     def __init__(self, agent_id: Optional[str] = None, **kwargs):
         self.agent_id = agent_id or random_uuid()
+        # 出题prompt
+        self.generate_prompt: Message= ''
+        # 答疑prompt
+        self.ask_prompt: Message = ''
         self.agent_type = self.__class__.__name__
         self.llm = ChatTongyi()
         # self.llm = init_chat_model("deepseek-r1", model_provider="deepseek")
@@ -51,6 +57,21 @@ class BaseAgent(ABC):
     @abstractmethod
     def process_ask(self, session: Session, latest_message: Message) -> str:
         """处理用户查询"""
+        pass
+
+    def generate_questions(self, session: Session, latest_message: Message) -> List['Question']:
+        """出题"""
+        content = self._generate_questions(session, latest_message)
+        try:
+            question_dicts = json.loads(markdown_to_json(content))
+        except Exception as e:
+            print('json.loads generate questions result error: ', e)
+            return []
+        questions = [Question.from_dict(question) for question in question_dicts]
+        return questions
+
+    @abstractmethod
+    def _generate_questions(self, session: Session, latest_message: Message) -> str:
         pass
 
     @abstractmethod

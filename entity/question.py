@@ -133,6 +133,7 @@ def create_question(
 ) -> Question:
     """创建问题实例的工厂函数"""
     question = Question(
+        id=random_uuid(),
         subject=subject,
         type=type,
         title=title,

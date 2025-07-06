@@ -22,18 +22,20 @@ def create_exam_api():
         data = request.get_json()
 
         # 验证必需字段
-        required_fields = ['paper_id', 'examinee_id']
+        required_fields = ['goal_id', 'examinee_id', 'question_id_list']
         for field in required_fields:
             if not data.get(field):
                 return jsonify({'error': f'缺少必需字段: {field}'}), 400
 
-        paper_id = data.get('paper_id')
+        goal_id = data.get('goal_id')
         examinee_id = data.get('examinee_id')
+        question_id_list = data.get('question_id_list')
 
         # 创建考试
         exam = create_exam(
-            paper_id=paper_id,
+            goal_id=goal_id,
             examinee_id=examinee_id,
+            question_id_list=question_id_list,
             answer=None
         )
 
@@ -43,7 +45,7 @@ def create_exam_api():
         return jsonify({
             'code': 0,
             'message': '考试创建成功',
-            'exam': saved_exam.to_dict()
+            'data': saved_exam.to_dict()
         }), 201
 
     except Exception as e:

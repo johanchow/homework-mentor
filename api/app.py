@@ -10,6 +10,7 @@ from .user_api import user_bp
 from .question_api import question_bp
 from .paper_api import paper_bp
 from .exam_api import exam_bp
+from .goal_api import goal_bp
 
 
 def create_app():
@@ -42,6 +43,7 @@ def create_app():
     app.register_blueprint(question_bp)
     app.register_blueprint(paper_bp)
     app.register_blueprint(exam_bp)
+    app.register_blueprint(goal_bp)
 
     # 设置日志
     logger = setup_logging()

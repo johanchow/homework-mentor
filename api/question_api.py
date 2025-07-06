@@ -78,10 +78,7 @@ class QuestionListResponse(BaseModel):
 
 class QuestionBatchCreateResponse(BaseModel):
     """批量创建问题响应模型"""
-    created_count: int
-    failed_count: int
     questions: List[QuestionResponse]
-    errors: List[str]
 
 
 # 工具函数
@@ -353,7 +350,7 @@ def list_questions_api():
         return jsonify({'error': f'获取问题列表失败: {str(e)}'}), 500
 
 
-@question_bp.route('/batch', methods=['POST'])
+@question_bp.route('/batch-create', methods=['POST'])
 @require_auth
 def batch_create_questions_api():
     """
@@ -362,57 +359,45 @@ def batch_create_questions_api():
     请求参数:
     - questions: 问题列表
     """
+    data = request.get_json()
+
+    if not data.get('questions'):
+        return jsonify({'error': '缺少问题列表'}), 400
+
+    questions = []
+    errors = []
+
+    for index, question_data in enumerate(data['questions']):
+        # 验证必需字段
+        required_fields = ['subject', 'type', 'title', 'creator_id']
+        for field in required_fields:
+            if not question_data.get(field):
+                errors.append(f'缺少必需字段: {field}')
+                return jsonify({'error': f'第{index+1}个问题缺少必需字段: {field}'}), 400
+
+        # 验证创建人是否存在
+        if not validate_creator_exists(question_data['creator_id']):
+            errors.append(f"创建人不存在: {question_data['creator_id']}")
+            return jsonify({'error': f'第{index+1}个问题创建人不存在: {question_data['creator_id']}'}), 400
+
+
+        # 创建问题
+        question = create_question(
+            subject=question_data['subject'],
+            type=question_data['type'],
+            title=question_data['title'],
+            creator_id=question_data['creator_id'],
+            options=question_data.get('options'),
+            images=question_data.get('images'),
+            audios=question_data.get('audios'),
+            videos=question_data.get('videos')
+        )
+        questions.append(question)
+
     try:
-        data = request.get_json()
-
-        if not data.get('questions'):
-            return jsonify({'error': '缺少问题列表'}), 400
-
-        created_questions = []
-        errors = []
-        created_count = 0
-        failed_count = 0
-
-        for question_data in data['questions']:
-            try:
-                # 验证必需字段
-                required_fields = ['subject', 'type', 'title', 'creator_id']
-                for field in required_fields:
-                    if not question_data.get(field):
-                        errors.append(f'缺少必需字段: {field}')
-                        failed_count += 1
-                        continue
-
-                # 验证创建人是否存在
-                if not validate_creator_exists(question_data['creator_id']):
-                    errors.append(f"创建人不存在: {question_data['creator_id']}")
-                    failed_count += 1
-                    continue
-
-                # 创建问题
-                question = create_question(
-                    subject=question_data['subject'],
-                    type=question_data['type'],
-                    title=question_data['title'],
-                    creator_id=question_data['creator_id'],
-                    options=question_data.get('options'),
-                    images=question_data.get('images'),
-                    audios=question_data.get('audios'),
-                    videos=question_data.get('videos')
-                )
-
-                # 保存到数据库
-                created_question = question_dao.create(question)
-                created_questions.append(created_question)
-                created_count += 1
-
-                logger.info(f"批量创建问题成功: {created_question.id}")
-
-            except Exception as e:
-                error_msg = f"创建问题失败: {str(e)}"
-                errors.append(error_msg)
-                failed_count += 1
-                logger.error(f"批量创建问题失败: {error_msg}")
+        # 批量保存到数据库
+        created_questions = question_dao.batch_create(questions)
+        logger.info(f"批量创建问题成功: {created_questions}")
 
         # 转换为响应格式
         question_responses = [question_to_response(q) for q in created_questions]
@@ -421,10 +406,7 @@ def batch_create_questions_api():
             'code': 0,
             'message': '批量创建问题完成',
             'data': {
-                'created_count': created_count,
-                'failed_count': failed_count,
                 'questions': question_responses,
-                'errors': errors
             }
         }), 200
 

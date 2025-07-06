@@ -24,11 +24,15 @@ class PaperDAO(BaseDao):
 
     def search_by_kwargs(self, kwargs: dict, skip: int = 0, limit: int = 100) -> List[Paper]:
         """根据关键字搜索试卷"""
-        return self._search_by_kwargs(Paper, kwargs, skip, limit)
+        # 定义需要模糊匹配的字段
+        fuzzy_fields = ['title', 'description']
+        return self._search_by_kwargs(Paper, kwargs, skip, limit, fuzzy_fields)
 
     def count_by_kwargs(self, kwargs: dict) -> int:
         """根据关键字统计试卷数量"""
-        return self._count_by_kwargs(Paper, kwargs)
+        # 定义需要模糊匹配的字段
+        fuzzy_fields = ['title', 'description']
+        return self._count_by_kwargs(Paper, kwargs, fuzzy_fields)
 
     def get_paper_with_questions(self, paper_id: str) -> Optional[Paper]:
         """根据ID获取试卷并加载问题列表"""

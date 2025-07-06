@@ -33,6 +33,7 @@ class User(SQLModel, table=True):
 
     questions: List['Question'] = Relationship(back_populates="creator")
     papers: List['Paper'] = Relationship(back_populates="creator")
+    goals: List['Goal'] = Relationship(back_populates="creator")
 
     class Config:
         json_encoders = {

@@ -26,7 +26,11 @@ class SessionDAO(BaseDao):
         Returns:
             会话对象
         """
-        return self._get_by_id(Session, id)
+        session = self._get_by_id(Session, id)
+        # 手动初始化 pydantic private attr
+        if session.__pydantic_private__ is None:
+            session.__pydantic_private__ = type(session)().__pydantic_private__
+        return session
 
     def search_by_kwargs(self, kwargs: dict, skip: int = 0, limit: int = 100) -> List[Session]:
         """
@@ -59,9 +63,9 @@ class SessionDAO(BaseDao):
         根据ID获取会话
         """
         session = self.get_by_id(id)
-        if session.topic == TopicType.QUESTION:
+        if session.topic == TopicType.QUESTION and session.topic_id:
             session.question = QuestionDAO.get_by_id(session.topic_id)
-        elif session.topic == TopicType.GOAL:
+        elif session.topic == TopicType.GOAL and session.topic_id:
             session.goal = GoalDAO.get_by_id(session.topic_id)
         return session
             

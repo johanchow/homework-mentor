@@ -97,6 +97,13 @@ class Question(BaseModel, table=True):
                 }]
             )
 
+    @classmethod
+    def from_dict(cls, data: dict) -> 'BaseModel':
+        """从字典创建"""
+        if data.get('options'):
+            data['options'] = json.dumps(data['options'])
+        return cls(**data)
+
     def to_dict(self) -> dict:
         """转换为字典格式"""
         try:

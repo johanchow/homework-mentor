@@ -31,6 +31,7 @@ class Session(BaseModel, table=True):
     # 可能关联问题
     _question: Optional[Question] = PrivateAttr(default=None)
     _goal: Optional[Goal] = PrivateAttr(default=None)
+
     
     # 消息列表 - 使用JSON字符串存储
     messages: Optional[str] = Field(default=None, description="消息列表JSON字符串")
@@ -60,11 +61,17 @@ class Session(BaseModel, table=True):
         self.messages = json.dumps(messages_list, ensure_ascii=False)
         self.updated_at = datetime.now()
 
-    def get_messages_list(self) -> List[Dict[str, Any]]:
+    def get_messages(self) -> List[Message]:
         """获取消息列表"""
         if self.messages:
-            return json.loads(self.messages)
+            messages = json.loads(self.messages)
+            return [Message.from_dict(msg) for msg in messages]
         return []
+
+    def get_messages_list(self) -> List[Dict[str, Any]]:
+        """获取消息列表"""
+        messages = self.get_messages()
+        return [msg.to_dict() for msg in messages]
 
     def clear_messages(self) -> None:
         """清空所有消息"""

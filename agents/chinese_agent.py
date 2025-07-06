@@ -49,9 +49,10 @@ class ChineseTeacherAgent(BaseAgent):
         return result.content
 
     def _generate_questions(self, session: Session, latest_message: Message) -> str:
-        history_messages = session.get_messages_list()
+        history_messages = session.get_messages()
         all_messages = [self.generate_prompt] + history_messages + [latest_message]
         llm_chat_messages = [msg.to_llm_message() for msg in all_messages]
+        print('send llm chat messages: ', '\n'.join([msg.content for msg in all_messages]))
         result = self.llm.invoke(llm_chat_messages)
         print('generate result', result.content)
         return result.content

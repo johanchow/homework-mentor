@@ -32,13 +32,16 @@ def generate_questions():
 
     if not session_id:
         session = create_session(TopicType.GOAL, '')
-        session._goal = create_goal(name='', subject=subject, ai_prompt=ai_prompt, creator_id='')
     else:
         session = session_dao.get_full_by_id(session_id)
 
+    # 创建goal流程，需要一并出题，这时候并没有已存在goal
+    if not session._goal:
+        session._goal = create_goal(name='', subject=subject, ai_prompt=ai_prompt, creator_id='')
+
     new_message = create_message(
         role=MessageRole.USER,
-        content=f"请根据以下新的提示生成{count}个{subject}题目:\n{ai_prompt}",
+        content=f"{ai_prompt}\n请根据提示生成{count}个题目",
         message_type=MessageType.TEXT
     )
     state = agent_graph.invoke({
@@ -59,8 +62,12 @@ def generate_questions():
         session_dao.create(session)
 
     return jsonify({
-        "questions": [q.to_dict() for q in questions],
-        "session_id": session.id
+        "code": 0,
+        "message": "success",
+        "data": {
+            "questions": [q.to_dict() for q in questions],
+            "session_id": session.id
+        }
     })
 
 

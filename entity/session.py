@@ -16,8 +16,10 @@ from utils.helpers import random_uuid
 
 class TopicType(str, Enum):
     """主题类型枚举"""
-    QUESTION = "question"  # 问题
-    GOAL = "goal"         # 目标
+    # QUESTION = "question"  # 问题
+    # GOAL = "goal"         # 目标
+    GUIDE = "guide"       # 指导
+    RAISE = "raise"       # 出题
 
 class Session(BaseModel, table=True):
     """会话实体类"""
@@ -149,7 +151,7 @@ def create_session(
 if __name__ == "__main__":
     # 创建一个会话示例
     session = create_session(
-        topic=TopicType.QUESTION,
+        topic=TopicType.GUIDE,
         topic_id="question123",
     )
 

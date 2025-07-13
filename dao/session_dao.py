@@ -63,9 +63,9 @@ class SessionDAO(BaseDao):
         根据ID获取会话
         """
         session = self.get_by_id(id)
-        if session.topic == TopicType.QUESTION and session.topic_id:
+        if session.topic == TopicType.GUIDE and session.topic_id:
             session.question = QuestionDAO.get_by_id(session.topic_id)
-        elif session.topic == TopicType.GOAL and session.topic_id:
+        elif session.topic == TopicType.RAISE and session.topic_id:
             session.goal = GoalDAO.get_by_id(session.topic_id)
         return session
             
@@ -110,7 +110,7 @@ if __name__ == "__main__":
     # dao = SessionDAO()
     #     
     # # 创建会话
-    # session = dao.create_session(TopicType.QUESTION, "question123")
+    # session = dao.create_session(TopicType.GUIDE, "question123")
     # print(f"创建会话: {session}")
     #     
     # # 添加消息

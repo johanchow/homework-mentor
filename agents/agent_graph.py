@@ -19,12 +19,12 @@ class AgentState(TypedDict):
     # messages: Annotated[Sequence[BaseMessage], add_messages]
 
 def decide_route(state: AgentState):
-    if state["session"].topic == TopicType.QUESTION:
+    if state["session"].topic == TopicType.GUIDE:
         subject = state["session"]._question.subject
-        return f"{subject}-topic-question"
+        return f"{subject}-topic-guide"
     else:
         subject = state["session"]._goal.subject
-        return f"{subject}-topic-goal"
+        return f"{subject}-topic-raise"
 
 
 # Define the function that calls the model
@@ -36,7 +36,7 @@ def call_chinese_teacher(state: AgentState):
     session.add_message(Message(role=MessageRole.ASSISTANT, content=resp_content))
     return {"session": session}
 
-def call_chinese_questioner(state: AgentState):
+def call_chinese_raiser(state: AgentState):
     chinese_agent = get_chinese_agent()
     session = state["session"]
     questions = chinese_agent.generate_questions(state["session"], state["latest_message"])
@@ -53,8 +53,8 @@ def create_workflow() -> CompiledGraph:
     graph = StateGraph(state_schema=AgentState)
 
     # Define the (single) node in the graph
-    graph.add_node("chinese-topic-question", call_chinese_teacher)
-    graph.add_node("chinese-topic-goal", call_chinese_questioner)
+    graph.add_node("chinese-topic-guide", call_chinese_teacher)
+    graph.add_node("chinese-topic-raise", call_chinese_raiser)
     graph.add_node("gossip", call_gossip_agent)
     graph.add_conditional_edges(
         START,

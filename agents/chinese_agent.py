@@ -24,7 +24,7 @@ class ChineseTeacherAgent(BaseAgent):
         self.conversation_history: List[Dict[str, Any]] = []
         self.current_session_id: Optional[str] = None
         self.llm = LLM.get_image_llm()
-        self.generate_prompt = create_message(role=MessageRole.SYSTEM, content='''
+        self.system_raise_prompt_template = create_message(role=MessageRole.SYSTEM, content='''
         你是一个教育类AI题库生成器。请根据下面的系统要求，还有后面用户的要求，生成 {N} 道与语文相关的题目。题目的类型可以包括：
 填空题(blank)、选择题(choice)、问答题(qa)
 每道题请按如下 JSON 格式返回，所有题目返回为一个 JSON 数组。具体字段说明如下：
@@ -50,7 +50,7 @@ class ChineseTeacherAgent(BaseAgent):
 
     def _generate_questions(self, session: Session, latest_message: Message) -> str:
         history_messages = session.get_messages()
-        all_messages = [self.generate_prompt] + history_messages + [latest_message]
+        all_messages = [self.system_raise_prompt_template] + history_messages + [latest_message]
         llm_chat_messages = [msg.to_llm_message() for msg in all_messages]
         print('send llm chat messages: ', '\n'.join([msg.content for msg in all_messages]))
         result = self.llm.invoke(llm_chat_messages)

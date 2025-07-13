@@ -36,7 +36,7 @@ class BaseAgent(ABC):
     def __init__(self, agent_id: Optional[str] = None, **kwargs):
         self.agent_id = agent_id or random_uuid()
         # 出题prompt - 用于生成题目的系统提示
-        self.generate_prompt: Message = create_message(
+        self.system_raise_prompt_template: Message = create_message(
             role=MessageRole.SYSTEM,
             content="你是一个教育类AI题库生成器。请根据用户的要求生成题目。"
         )

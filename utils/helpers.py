@@ -16,6 +16,7 @@ def setup_logging(name: str = "langgraph_agents") -> logging.Logger:
     if not logger.handlers:
         logger.setLevel(getattr(logging, settings.LOG_LEVEL))
 
+
         # 创建控制台处理器
         console_handler = logging.StreamHandler()
         console_handler.setLevel(getattr(logging, settings.LOG_LEVEL))

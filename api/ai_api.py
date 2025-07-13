@@ -6,6 +6,7 @@ from flask import Blueprint, request, jsonify
 import logging
 import json
 from agents.agent_graph import agent_graph
+from agents.parse_image_agent import ParseImageAgent
 from entity.session import create_session, TopicType
 from dao.session_dao import session_dao
 from entity.message import create_message, MessageRole, MessageType
@@ -71,10 +72,34 @@ def generate_questions():
     })
 
 
-@ai_bp.route('/import-questions', methods=['POST'])
-def import_questions():
-    """导入题目"""
+@ai_bp.route('/parse-questions-from-images', methods=['POST'])
+def parse_questions_from_images():
+    """从图片中解析题目"""
     data = request.get_json()
-    pass
+    images = data.get('image_urls')
+    print(logger.level)                          # 30
+    for h in logger.handlers:
+        print(h.level) 
+    logger.info(f'开始从图片中提取题目，图片数量: {len(images)}')
+    if not images:
+        return jsonify({'error': 'images is required'}), 400
+    
+    # 调用AI解析题目
+    parse_image_agent = ParseImageAgent()
+    # 创建包含图片的消息
+    image_contents = [{"type": "image_url", "image_url": {"url": image}} for image in images]
+    message = create_message(
+        role=MessageRole.USER,
+        content=image_contents
+    )
+    questions = parse_image_agent.process_input(message)
+    logger.info(f'完成从图片中提取题目，题目数量: {len(questions)}')
+    return jsonify({
+        'code': 0,
+        'message': 'success',
+        'data': {
+            'questions': [q.to_dict() for q in questions]
+        }
+    })
 
 

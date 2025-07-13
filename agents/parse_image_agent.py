@@ -12,16 +12,16 @@ from langchain.agents import AgentExecutor, create_openai_functions_agent
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 import asyncio
 from utils.llm import LLM
-from entity.message import Message, MessageRole
+from entity.message import create_message, Message, MessageRole
 from entity.question import Question
 from utils.transformer import markdown_to_json
 
-class TypistAgent(ABC):
+class ParseImageAgent(ABC):
     """录入题目Agent - 负责录入题目"""
 
     def __init__(self, agent_id: Optional[str] = None, **kwargs):
         # super().__init__(agent_id, **kwargs)
-        self.system_prompt: Message = Message(role=MessageRole.SYSTEM, content="""
+        self.system_prompt: Message = create_message(role=MessageRole.SYSTEM, content="""
 	用户会可能会传入一段文字、或者若干个图片，里面都应该是多个小学题目。也可能会包含一点杂乱无用的信息。
 
 题目的全部类型有： 选择题(choice)、判断题(judge)、问答题(qa)

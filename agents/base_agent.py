@@ -17,6 +17,7 @@ from entity.message import Message, create_message, MessageRole
 from entity.question import Question
 from utils.transformer import markdown_to_json
 from utils.helpers import random_uuid
+
 class AgentState(BaseModel):
     """Agent状态模型"""
     agent_id: str
@@ -34,10 +35,16 @@ class BaseAgent(ABC):
 
     def __init__(self, agent_id: Optional[str] = None, **kwargs):
         self.agent_id = agent_id or random_uuid()
-        # 出题prompt
-        self.generate_prompt: Message= ''
-        # 答疑prompt
-        self.ask_prompt: Message = ''
+        # 出题prompt - 用于生成题目的系统提示
+        self.generate_prompt: Message = create_message(
+            role=MessageRole.SYSTEM,
+            content="你是一个教育类AI题库生成器。请根据用户的要求生成题目。"
+        )
+        # 答疑prompt - 用于回答问题的系统提示
+        self.ask_prompt: Message = create_message(
+            role=MessageRole.SYSTEM,
+            content="你是一个经验丰富的老师，请根据学生的问题提供详细的解答和指导。"
+        )
         self.agent_type = self.__class__.__name__
         self.llm = ChatTongyi()
         # self.llm = init_chat_model("deepseek-r1", model_provider="deepseek")

@@ -3,7 +3,7 @@
 """
 
 import asyncio
-from agents.planner_typist_agent import TypistAgent
+from agents.planner_typist_agent import ParseImageAgent
 from entity.message import Message, MessageRole
 
 
@@ -11,7 +11,7 @@ async def test_text_input():
     """测试纯文本输入"""
     print("🧪 测试纯文本输入...")
 
-    agent = TypistAgent()
+    agent = ParseImageAgent()
 
     # 测试选择题
     text_input = Message(role=MessageRole.USER, content="""
@@ -33,7 +33,7 @@ async def test_multimodal_input():
     """测试多模态输入（文字+图片）"""
     print("\n🧪 测试多模态输入...")
 
-    agent = TypistAgent()
+    agent = ParseImageAgent()
 
     # 创建包含图片的消息
     message = Message(

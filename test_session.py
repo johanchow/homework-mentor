@@ -18,7 +18,7 @@ def test_session_entity():
     
     # 创建会话
     session = create_session(
-        topic=TopicType.QUESTION,
+        topic=TopicType.GUIDE,
         topic_id="question123"
     )
     print(f"创建会话: {session}")
@@ -87,7 +87,7 @@ def test_session_with_goal():
     
     # 创建Goal类型的会话
     goal_session = create_session(
-        topic=TopicType.GOAL,
+        topic=TopicType.RAISE,
         topic_id="goal456"
     )
     print(f"创建Goal会话: {goal_session}")

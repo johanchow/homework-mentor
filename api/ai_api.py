@@ -6,6 +6,7 @@ from flask import Blueprint, request, jsonify
 import logging
 import json
 from agents.agent_graph import agent_graph
+from agents.parse_image_agent import ParseImageAgent
 from entity.session import create_session, TopicType
 from dao.session_dao import session_dao
 from entity.message import create_message, MessageRole, MessageType
@@ -25,23 +26,23 @@ def generate_questions():
         if not data.get(field):
             return jsonify({'error': f'{field} is required'}), 400
 
-    ai_prompt = data.get('ai_prompt')
+    user_prompt = data.get('ai_prompt')
     subject = data.get('subject')
     count = data.get('count')
     session_id = data.get('session_id')
 
     if not session_id:
-        session = create_session(TopicType.GOAL, '')
+        session = create_session(TopicType.RAISE, '')
     else:
         session = session_dao.get_full_by_id(session_id)
 
     # 创建goal流程，需要一并出题，这时候并没有已存在goal
     if not session._goal:
-        session._goal = create_goal(name='', subject=subject, ai_prompt=ai_prompt, creator_id='')
+        session._goal = create_goal(name='', subject=subject, ai_prompt=user_prompt, creator_id='')
 
     new_message = create_message(
         role=MessageRole.USER,
-        content=f"{ai_prompt}\n请根据提示生成{count}个题目",
+        content=f"{user_prompt}\n请根据提示生成{count}个题目",
         message_type=MessageType.TEXT
     )
     state = agent_graph.invoke({
@@ -53,7 +54,7 @@ def generate_questions():
     # 添加用户消息
     session.add_message(create_message(
         role=MessageRole.USER,
-        content=ai_prompt,
+        content=user_prompt,
         message_type=MessageType.TEXT
     ))
     if session_id:
@@ -71,10 +72,34 @@ def generate_questions():
     })
 
 
-@ai_bp.route('/import-questions', methods=['POST'])
-def import_questions():
-    """导入题目"""
+@ai_bp.route('/parse-questions-from-images', methods=['POST'])
+def parse_questions_from_images():
+    """从图片中解析题目"""
     data = request.get_json()
-    pass
+    images = data.get('image_urls')
+    print(logger.level)                          # 30
+    for h in logger.handlers:
+        print(h.level) 
+    logger.info(f'开始从图片中提取题目，图片数量: {len(images)}')
+    if not images:
+        return jsonify({'error': 'images is required'}), 400
+    
+    # 调用AI解析题目
+    parse_image_agent = ParseImageAgent()
+    # 创建包含图片的消息
+    image_contents = [{"type": "image_url", "image_url": {"url": image}} for image in images]
+    message = create_message(
+        role=MessageRole.USER,
+        content=image_contents
+    )
+    questions = parse_image_agent.process_input(message)
+    logger.info(f'完成从图片中提取题目，题目数量: {len(questions)}')
+    return jsonify({
+        'code': 0,
+        'message': 'success',
+        'data': {
+            'questions': [q.to_dict() for q in questions]
+        }
+    })
 
 

@@ -17,6 +17,8 @@ from entity.message import Message, create_message, MessageRole
 from entity.question import Question
 from utils.transformer import markdown_to_json
 from utils.helpers import random_uuid
+from service.vector_service import vector_service
+
 class AgentState(BaseModel):
     """Agent状态模型"""
     agent_id: str
@@ -34,10 +36,16 @@ class BaseAgent(ABC):
 
     def __init__(self, agent_id: Optional[str] = None, **kwargs):
         self.agent_id = agent_id or random_uuid()
-        # 出题prompt
-        self.generate_prompt: Message= ''
-        # 答疑prompt
-        self.ask_prompt: Message = ''
+        # 出题prompt - 用于生成题目的系统提示
+        self.system_raise_prompt_template: Message = create_message(
+            role=MessageRole.SYSTEM,
+            content="你是一个教育类AI题库生成器。请根据用户的要求生成题目。"
+        )
+        # 答疑prompt - 用于回答问题的系统提示
+        self.ask_prompt: Message = create_message(
+            role=MessageRole.SYSTEM,
+            content="你是一个经验丰富的老师，请根据学生的问题提供详细的解答和指导。"
+        )
         self.agent_type = self.__class__.__name__
         self.llm = ChatTongyi()
         # self.llm = init_chat_model("deepseek-r1", model_provider="deepseek")
@@ -69,6 +77,35 @@ class BaseAgent(ABC):
             return []
         questions = [Question.from_dict(question) for question in question_dicts]
         return questions
+
+    def get_system_raise_prompt(self, session: Session, latest_message: Message) -> Message:
+        """获取系统提示"""
+        # 根据科目找到全部题目，并且向量化；然后根据用户的问题，找到最相似的题目，然后生成系统提示
+        near_questions: List[Question] = vector_service.list_sematic_near_questions(session._goal.subject, latest_message.content)
+        system_raise_prompt = self.system_raise_prompt_template.content
+        if len(near_questions) > 0:
+            system_raise_prompt += "\n\n例如: "
+            for question in near_questions:
+                # 构建选项字符串
+                options_str = f'"options": {question.options},' if question.type == 'choice' and question.options else ""
+                images_str = f'"images": {question.images},' if question.images else ""
+                audios_str = f'"audios": {question.audios},' if question.audios else ""
+                videos_str = f'"videos": {question.videos},' if question.videos else ""
+                
+                # 过滤掉空字符串，避免产生空行
+                non_empty_fields = [field for field in [options_str, images_str, audios_str, videos_str] if field]
+                
+                # 构建JSON内容
+                json_content = f'  "title": "{question.title}",\n  "subject": "{question.subject.value}",\n  "type": "{question.type.value}"'
+                if non_empty_fields:
+                    json_content += f',\n  {chr(10).join(non_empty_fields)}'
+                
+                system_raise_prompt += f"""
+{{
+{json_content}
+}}
+                """
+        return create_message(role=MessageRole.SYSTEM, content=system_raise_prompt)
 
     @abstractmethod
     def _generate_questions(self, session: Session, latest_message: Message) -> str:

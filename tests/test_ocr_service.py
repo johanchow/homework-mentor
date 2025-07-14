@@ -15,7 +15,7 @@ def test_local_file():
     
     try:
         # 测试本地文件
-        results = ocr_service.read_from_file('99999.png')
+        results = ocr_service.read_from_file('tests/99999.png')
         print(f"识别到 {len(results)} 个文本区域:")
         
         for i, result in enumerate(results, 1):

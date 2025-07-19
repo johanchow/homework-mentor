@@ -8,7 +8,7 @@ class GossipAgent(BaseAgent):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def process_ask(self, query: str) -> str:
+    def process_guide(self, query: str) -> str:
         return self.llm.invoke(query)
 
 

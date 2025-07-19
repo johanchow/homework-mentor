@@ -37,7 +37,7 @@ class ChineseTeacherAgent(BaseAgent):
         ''')
         self.ask_prompt = ''
 
-    def process_ask(self, session: Session, latest_message: Message) -> str:
+    def process_guide(self, session: Session, latest_message: Message) -> str:
         """处理用户查询 - 使用AgentExecutor"""
         prompt_message = Message(role=MessageRole.SYSTEM, content="你是一位经验丰富的中文老师，擅长语文教学和指导。")
         question_message = session.question.to_message()
@@ -48,7 +48,7 @@ class ChineseTeacherAgent(BaseAgent):
         print('get ask result', result.content)
         return result.content
 
-    def _generate_questions(self, session: Session, latest_message: Message) -> str:
+    def _process_raise(self, session: Session, latest_message: Message) -> str:
         history_messages = session.get_messages()
         system_raise_prompt = self.get_system_raise_prompt(session, latest_message)
         all_messages = [system_raise_prompt] + history_messages + [latest_message]
@@ -59,7 +59,7 @@ class ChineseTeacherAgent(BaseAgent):
         return result.content
 
         
-    def _fallback_process_ask(self, query: str) -> str:
+    def _fallback_process_guide(self, query: str) -> str:
         """回退的查询处理方法"""
         messages = [
             SystemMessage(content="你是一位经验丰富的中文老师，请根据学生的问题提供详细的解答和指导。"),

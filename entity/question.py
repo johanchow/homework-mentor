@@ -20,8 +20,10 @@ class QuestionType(str, Enum):
     JUDGE = "judge"                     # 判断题
     CHOICE = "choice"                   # 选择题
     QA = "qa"                           # 问答题
-    ORAL = "oral"                       # 口述题
-    PERFORMANCE = "performance"         # 表演题
+    READING = "reading"                 # 阅读题
+    SUMMARY = "summary"                 # 总结题
+    SHOW = "show"                       # 展示题
+    OTHER = "other"                     # 其他
 
 
 class Subject(str, Enum):
@@ -46,14 +48,20 @@ class Question(BaseModel, table=True):
     subject: Subject = Field(..., description="科目")
     type: QuestionType = Field(..., description="问题类型")
     title: str = Field(..., description="题干")
+    tip: Optional[str] = Field(default=None, description="提示")
 
     # 媒体资源 - 使用JSON字符串存储
+    links: Optional[str] = Field(default=None, description="链接列表字符串(以逗号分割)")
+    attachments: Optional[str] = Field(default=None, description="附件列表字符串(以逗号分割)")
     images: Optional[str] = Field(default=None, description="图片文件列表字符串(以逗号分割)")
     audios: Optional[str] = Field(default=None, description="音频文件列表字符串(以逗号分割)")
     videos: Optional[str] = Field(default=None, description="视频文件列表字符串(以逗号分割)")
 
     # 选项（用于选择题）- 使用JSON字符串存储
     options: Optional[str] = Field(default=None, description="选项列表字符串(选择题专用,以逗号分割)")
+
+    # 材料内容，可能是文件中提取的，可能是题目中提取的
+    material: Optional[str] = Field(default=None, description="内容dict字符串")
 
     # 时间信息
     created_at: datetime = Field(default_factory=datetime.now, description="创建时间")
@@ -66,6 +74,9 @@ class Question(BaseModel, table=True):
     # 状态信息
     is_active: bool = Field(default=True, description="是否激活")
     is_deleted: bool = Field(default=False, description="是否已删除")
+
+    sessions: List['Session'] = Relationship(back_populates="question")
+
 
     class Config:
         json_encoders = {
@@ -100,32 +111,21 @@ class Question(BaseModel, table=True):
     @classmethod
     def from_dict(cls, data: dict) -> 'BaseModel':
         """从字典创建"""
-        if data.get('options'):
-            data['options'] = json.dumps(data['options'])
+        for field in ['options', 'images', 'audios', 'videos', 'attachments', 'links']:
+            if data.get(field):
+                data[field] = ','.join(data[field])
         return cls(**data)
 
     def to_dict(self) -> dict:
         """转换为字典格式"""
-        try:
-            options = json.loads(self.options) if self.options else []
-        except Exception as e:
-            logger.exception(f"转换问题选项失败: {e}")
-            options = ["__invalid__"]
-
-        return {
-            "id": self.id if self.id else None,
-            "subject": self.subject,
-            "type": self.type,
-            "title": self.title,
-            "options": options if options else [],
-            "images": self.images.split(',') if self.images else [],
-            "audios": self.audios.split(',') if self.audios else [],
-            "videos": self.videos.split(',') if self.videos else [],
-            "creator_id": self.creator_id if self.creator_id else None,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
-            "is_deleted": self.is_deleted
-        }
+        result = {}
+        for field in self.__fields__:
+            value = getattr(self, field)
+            if field in ['images', 'audios', 'videos', 'options', 'attachments', 'links']:
+                result[field] = value.split(',') if value else []
+            else:
+                result[field] = value
+        return result
 
     def get_images_list(self) -> List[str]:
         """获取图片列表"""
@@ -153,33 +153,9 @@ class Question(BaseModel, table=True):
 
 
 # 创建问题的工厂函数
-def create_question(
-    subject: Subject,
-    type: QuestionType,
-    title: str,
-    creator_id: str,
-    options: Optional[List[str]] = None,
-    images: Optional[List[str]] = None,
-    audios: Optional[List[str]] = None,
-    videos: Optional[List[str]] = None,
-) -> Question:
+def create_question(**kwargs) -> Question:
     """创建问题实例的工厂函数"""
-    question = Question(
-        id=random_uuid(),
-        subject=subject,
-        type=type,
-        title=title,
-        creator_id=creator_id,
-    )
-    if options:
-        question.options = json.dumps(options)
-    if images:
-        question.images = ",".join(images)
-    if audios:
-        question.audios = ",".join(audios)
-    if videos:
-        question.videos = ",".join(videos)
-
+    question = Question.from_dict(kwargs)
     return question
 
 

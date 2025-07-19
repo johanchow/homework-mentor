@@ -84,7 +84,7 @@ class ParseImageAgent(ABC):
         questions = [Question.from_dict(question) for question in question_dicts]
         return questions
 
-    def _fallback_process_ask(self, query: str) -> str:
+    def _fallback_process_guide(self, query: str) -> str:
         """回退的查询处理方法"""
         messages = [
             SystemMessage(content="你是一位经验丰富的中文老师，请根据学生的问题提供详细的解答和指导。"),

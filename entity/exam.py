@@ -3,6 +3,7 @@
 """
 
 import json
+from enum import Enum
 from datetime import datetime
 from typing import Optional, List
 from sqlmodel import Field, Relationship
@@ -13,6 +14,12 @@ from entity.question import Question
 from utils.helpers import random_uuid
 from entity.answer import Answer
 
+class ExamStatus(str, Enum):
+    """考试状态"""
+    PENDING = "pending"  # 待开始
+    ONGOING = "ongoing"  # 进行中
+    COMPLETED = "completed"  # 已完成
+    CANCELLED = "cancelled"  # 已取消
 
 class Exam(BaseModel, table=True):
     """考试实体类"""
@@ -31,8 +38,20 @@ class Exam(BaseModel, table=True):
     # 声明一个私有实例属性，不被 ORM、验证、导出影响，不被当成数据库字段处理
     _questions: List[Question] = PrivateAttr(default_factory=list)
 
+    # 状态
+    status: ExamStatus = Field(default=ExamStatus.PENDING, description="状态")
+
     # 答卷
     answer_json: str | None = Field(default=None, description="答卷json")
+
+    # 预计开始时间
+    plan_starttime: datetime = Field(default=None, description="预计开始时间")
+    # 预计耗时
+    plan_duration: int = Field(default=0, description="预计耗时")
+    # 实际开始时间
+    actual_starttime: datetime = Field(default=None, description="实际开始时间")
+    # 实际结束时间
+    actual_duration: int = Field(default=0, description="实际耗时")
 
     # 时间信息
     created_at: datetime = Field(default_factory=datetime.now, description="创建时间")

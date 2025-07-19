@@ -18,6 +18,7 @@ from entity.question import Question
 from utils.transformer import markdown_to_json
 from utils.helpers import random_uuid
 from service.vector_service import vector_service
+from agents.prompt import get_import_prompt
 
 class AgentState(BaseModel):
     """Agent状态模型"""
@@ -46,6 +47,11 @@ class BaseAgent(ABC):
             role=MessageRole.SYSTEM,
             content="你是一个经验丰富的老师，请根据学生的问题提供详细的解答和指导。"
         )
+        # 导入题prompt
+        self.system_import_prompt_template: Message = create_message(
+            role=MessageRole.SYSTEM,
+            content="你是一个教育老师。请根据题目基础信息，进行完善题目"
+        )
         self.agent_type = self.__class__.__name__
         self.llm = ChatTongyi()
         # self.llm = init_chat_model("deepseek-r1", model_provider="deepseek")
@@ -63,13 +69,13 @@ class BaseAgent(ABC):
         )
 
     @abstractmethod
-    def process_ask(self, session: Session, latest_message: Message) -> str:
+    def process_guide(self, session: Session, latest_message: Message) -> str:
         """处理用户查询"""
         pass
 
-    def generate_questions(self, session: Session, latest_message: Message) -> List['Question']:
+    def process_raise(self, session: Session, latest_message: Message) -> List['Question']:
         """出题"""
-        content = self._generate_questions(session, latest_message)
+        content = self._process_raise(session, latest_message)
         try:
             question_dicts = json.loads(markdown_to_json(content))
         except Exception as e:
@@ -77,6 +83,22 @@ class BaseAgent(ABC):
             return []
         questions = [Question.from_dict(question) for question in question_dicts]
         return questions
+
+    def process_import(self, session: Session, latest_message: Message) -> 'Question':
+        """导入题目"""
+        messages = get_import_prompt(session.question)
+        llm_chat_messages = [msg.to_llm_message() for msg in messages]
+        result = self.llm.invoke(llm_chat_messages)
+        result = {
+            "content": json.dumps({
+                "material": "It's sunny today, I want to go to the park"
+            })
+        }
+        print('process_import result: ', result)
+        question_dict = json.loads(markdown_to_json(result['content']))
+        question = session.question
+        question.material = question_dict['material']
+        return question
 
     def get_system_raise_prompt(self, session: Session, latest_message: Message) -> Message:
         """获取系统提示"""
@@ -108,7 +130,7 @@ class BaseAgent(ABC):
         return create_message(role=MessageRole.SYSTEM, content=system_raise_prompt)
 
     @abstractmethod
-    def _generate_questions(self, session: Session, latest_message: Message) -> str:
+    def _process_raise(self, session: Session, latest_message: Message) -> str:
         pass
 
     @abstractmethod

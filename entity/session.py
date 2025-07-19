@@ -16,10 +16,9 @@ from utils.helpers import random_uuid
 
 class TopicType(str, Enum):
     """主题类型枚举"""
-    # QUESTION = "question"  # 问题
-    # GOAL = "goal"         # 目标
     GUIDE = "guide"       # 指导
     RAISE = "raise"       # 出题
+    IMPORT = "import"     # 导入题
 
 class Session(BaseModel, table=True):
     """会话实体类"""
@@ -27,12 +26,14 @@ class Session(BaseModel, table=True):
     # 基本信息
     id: Optional[str] = Field(default_factory=lambda: random_uuid(), primary_key=True, description="会话唯一标识")
     topic: TopicType = Field(..., description="主题类型")
-    # 多态外键，可能是question_id，也可能是goal_id
-    topic_id: str = Field(..., description="主题ID")
+    # # 多态外键，可能是question_id，也可能是goal_id
+    # topic_id: str = Field(..., description="主题ID")
+    question_id: Optional[str] = Field(default=None, description="问题ID", foreign_key="question.id")
+    question: Optional[Question] = Relationship(back_populates="sessions")
 
     # 可能关联问题
-    _question: Optional[Question] = PrivateAttr(default=None)
-    _goal: Optional[Goal] = PrivateAttr(default=None)
+    # _question: Optional[Question] = PrivateAttr(default=None)
+    # _goal: Optional[Goal] = PrivateAttr(default=None)
 
     
     # 消息列表 - 使用JSON字符串存储

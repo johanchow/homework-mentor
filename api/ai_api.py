@@ -10,7 +10,7 @@ from agents.parse_image_agent import ParseImageAgent
 from entity.session import create_session, TopicType
 from dao.session_dao import session_dao
 from entity.message import create_message, MessageRole, MessageType
-from entity.goal import create_goal
+from entity.question import create_question
 
 logger = logging.getLogger(__name__)
 
@@ -99,6 +99,25 @@ def parse_questions_from_images():
         'message': 'success',
         'data': {
             'questions': [q.to_dict() for q in questions]
+        }
+    })
+
+@ai_bp.route('/analyze-question', methods=['POST'])
+def analyze_question_answer():
+    """分析题目和答案"""
+    data = request.get_json()
+    session = create_session(TopicType.IMPORT, '')
+    session.question = create_question(**data.get('question'))
+    agent_graph.invoke({
+        "session": session,
+        "latest_message": "",
+    })
+    new_question = session.question
+    return jsonify({
+        "code": 0,
+        "message": "success",
+        "data": {
+            "question": new_question.to_dict()
         }
     })
 

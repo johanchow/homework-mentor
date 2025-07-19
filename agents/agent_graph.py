@@ -14,37 +14,51 @@ class AgentState(TypedDict):
     session: Session
     # 最新消息
     latest_message: Message
+    # 输出
+    output: Any
     # 出题列表
-    questions: List[Question]
+    # questions: List[Question]
     # messages: Annotated[Sequence[BaseMessage], add_messages]
 
 def decide_route(state: AgentState):
     if state["session"].topic == TopicType.GUIDE:
-        subject = state["session"]._question.subject
+        subject = state["session"].question.subject
         return f"{subject}-topic-guide"
-    else:
+    elif state["session"].topic == TopicType.RAISE:
         subject = state["session"]._goal.subject
         return f"{subject}-topic-raise"
+    elif state["session"].topic == TopicType.IMPORT:
+        # subject = state["session"].question.subject
+        subject = "english"
+        return f"{subject}-topic-import"
+    else:
+        return "gossip"
 
 
 # Define the function that calls the model
-def call_chinese_teacher(state: AgentState):
-    print('call_chinese_teacher', state)
+def call_chinese_guide(state: AgentState):
+    print('call chinese guide', state)
     chinese_agent = get_chinese_agent()
     session = state["session"]
-    resp_content = chinese_agent.process_ask(state["session"], state["latest_message"])
+    resp_content = chinese_agent.process_guide(state["session"], state["latest_message"])
     session.add_message(Message(role=MessageRole.ASSISTANT, content=resp_content))
     return {"session": session}
 
 def call_chinese_raiser(state: AgentState):
     chinese_agent = get_chinese_agent()
     session = state["session"]
-    questions = chinese_agent.generate_questions(state["session"], state["latest_message"])
+    questions = chinese_agent.process_raise(state["session"], state["latest_message"])
+    return {"session": session, "questions": questions}
+
+def call_english_import(state: AgentState):
+    chinese_agent = get_chinese_agent()
+    session = state["session"]
+    questions = chinese_agent.process_import(state["session"], state["latest_message"])
     return {"session": session, "questions": questions}
 
 def call_gossip_agent(state: AgentState):
     gossip_agent = get_gossip_agent()
-    response = gossip_agent.process_ask(state["session"], state["latest_message"])
+    response = gossip_agent.process_guide(state["session"], state["latest_message"])
     return {"messages": response}
 
 
@@ -53,8 +67,9 @@ def create_workflow() -> CompiledGraph:
     graph = StateGraph(state_schema=AgentState)
 
     # Define the (single) node in the graph
-    graph.add_node("chinese-topic-guide", call_chinese_teacher)
+    graph.add_node("chinese-topic-guide", call_chinese_guide)
     graph.add_node("chinese-topic-raise", call_chinese_raiser)
+    graph.add_node("english-topic-import", call_english_import)
     graph.add_node("gossip", call_gossip_agent)
     graph.add_conditional_edges(
         START,

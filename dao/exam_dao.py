@@ -24,9 +24,7 @@ class ExamDAO(BaseDao):
 
     def search_by_kwargs(self, kwargs: dict, skip: int = 0, limit: int = 100) -> List[Exam]:
         """根据关键字搜索考试"""
-        # 考试实体通常不需要模糊匹配，使用相等匹配
-        fuzzy_fields = []
-        return self._search_by_kwargs(Exam, kwargs, skip, limit, fuzzy_fields)
+        return self._search_by_kwargs(Exam, kwargs, skip, limit)
 
     def count_by_kwargs(self, kwargs: dict) -> int:
         """根据关键字统计考试数量"""

@@ -152,6 +152,8 @@ def list_exams():
         # 获取查询参数
         paper_id = request.args.get('paper_id')
         examinee_id = request.args.get('examinee_id')
+        plan_starttime_from = request.args.get('plan_starttime_from')  # 大于某时间
+        plan_starttime_to = request.args.get('plan_starttime_to')  # 小于某时间
         page = int(request.args.get('page', 1))
         size = int(request.args.get('size', 10))
 
@@ -165,6 +167,12 @@ def list_exams():
             kwargs['paper_id'] = paper_id
         if examinee_id:
             kwargs['examinee_id'] = examinee_id
+        
+        # 添加时间过滤条件
+        if plan_starttime_from:
+            kwargs['plan_starttime'] = {"$gte": plan_starttime_from}
+        if plan_starttime_to:
+            kwargs['plan_starttime'] = {"$lte": plan_starttime_to}
 
         # 查询考试列表
         exams = exam_dao.search_by_kwargs(kwargs, skip, limit)

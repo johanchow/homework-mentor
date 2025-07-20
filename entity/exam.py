@@ -13,13 +13,14 @@ from entity.message import Message
 from entity.question import Question
 from utils.helpers import random_uuid
 from entity.answer import Answer
+from utils.transformer import iso_to_mysql_datetime, mysql_datetime_to_iso
 
 class ExamStatus(str, Enum):
     """考试状态"""
-    PENDING = "pending"  # 待开始
-    ONGOING = "ongoing"  # 进行中
-    COMPLETED = "completed"  # 已完成
-    CANCELLED = "cancelled"  # 已取消
+    pending = "pending"  # 待开始
+    ongoing = "ongoing"  # 进行中
+    completed = "completed"  # 已完成
+    cancelled = "cancelled"  # 已取消
 
 class Exam(BaseModel, table=True):
     """考试实体类"""
@@ -39,7 +40,7 @@ class Exam(BaseModel, table=True):
     _questions: List[Question] = PrivateAttr(default_factory=list)
 
     # 状态
-    status: ExamStatus = Field(default=ExamStatus.PENDING, description="状态")
+    status: ExamStatus = Field(default=ExamStatus.pending, description="状态")
 
     # 答卷
     answer_json: str | None = Field(default=None, description="答卷json")
@@ -87,23 +88,35 @@ class Exam(BaseModel, table=True):
         except Exception as e:
             raise ValueError(f"答卷解析失败: {e}")
 
+    @classmethod
+    def from_dict(cls, data: dict) -> 'Exam':
+        """从字典创建"""
+        for field in ['question_ids']:
+            if data.get(field):
+                data[field] = ",".join(data[field])
+        for field in ['answer']:
+            if isinstance(data.get(field), Answer):
+                data[field] = data[field].model_dump_json()
+        for field in ['plan_starttime', 'actual_starttime']:
+            if data.get(field):
+                data[field] = iso_to_mysql_datetime(data[field])
+        return cls(**data)
+
+    def to_dict(self) -> dict:
+        """转换为字典格式"""
+        result = {}
+        for field in self.__fields__:
+            value = getattr(self, field)
+            if field in ['question_ids']:
+                result[field] = value.split(',') if value else []
+            elif field in ['plan_starttime', 'actual_starttime']:
+                result[field] = mysql_datetime_to_iso(value)
+            else:
+                result[field] = value
+        return result
+
 
 # 创建考试的工厂函数
-def create_exam(
-    goal_id: str,
-    examinee_id: str,
-    question_id_list: List[str],
-    answer: Answer | None,
-) -> Exam:
+def create_exam(**kwargs) -> Exam:
     """创建考试实例的工厂函数"""
-    if answer is not None:
-        answer_json = answer.model_dump_json()
-    else:
-        answer_json = None
-    return Exam(
-        id=random_uuid(),
-        goal_id=goal_id,
-        examinee_id=examinee_id,
-        question_ids=",".join(question_id_list),
-        answer_json=answer_json,
-    )
+    return Exam.from_dict(kwargs)

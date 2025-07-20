@@ -81,32 +81,6 @@ class QuestionBatchCreateResponse(BaseModel):
     questions: List[QuestionResponse]
 
 
-# 工具函数
-def question_to_response(question: Question) -> dict:
-    """将Question实体转换为响应格式"""
-    try:
-        options = json.loads(question.options) if question.options else []
-    except Exception as e:
-        logger.exception(f"转换问题选项失败: {e}")
-        options = ["__invalid__"]
-
-    return {
-        "id": question.id,
-        "subject": question.subject,
-        "type": question.type,
-        "title": question.title,
-        "options": options,
-        "images": question.images.split(',') if question.images else [],
-        "audios": question.audios.split(',') if question.audios else [],
-        "videos": question.videos.split(',') if question.videos else [],
-        "creator_id": question.creator_id,
-        "created_at": question.created_at.isoformat(),
-        "updated_at": question.updated_at.isoformat(),
-        "is_active": question.is_active,
-        "is_deleted": question.is_deleted
-    }
-
-
 def validate_creator_exists(creator_id: str) -> bool:
     """验证创建人是否存在"""
     creator = user_dao.get_by_id(creator_id)
@@ -163,7 +137,7 @@ def create_question_api():
         return jsonify({
             'code': 0,
             'message': '问题创建成功',
-            'question': question_to_response(created_question)
+            'question': created_question.to_dict()
         }), 201
 
     except Exception as e:
@@ -188,7 +162,7 @@ def get_question_api(question_id):
         return jsonify({
             'code': 0,
             'message': '获取问题详情成功',
-            'question': question_to_response(question)
+            'question': question.to_dict()
         }), 200
 
     except Exception as e:
@@ -248,7 +222,7 @@ def update_question_api(question_id):
         return jsonify({
             'code': 0,
             'message': '问题更新成功',
-            'question': question_to_response(updated_question)
+            'question': updated_question.to_dict()
         }), 200
 
     except Exception as e:
@@ -331,7 +305,7 @@ def list_questions_api():
         total = question_dao.count_by_kwargs(filters)
 
         # 转换为响应格式
-        question_responses = [question_to_response(q) for q in questions]
+        question_responses = [q.to_dict() for q in questions]
 
         return jsonify({
             'code': 0,
@@ -382,25 +356,16 @@ def batch_create_questions_api():
 
 
         # 创建问题
-        question = create_question(
-            subject=question_data['subject'],
-            type=question_data['type'],
-            title=question_data['title'],
-            creator_id=question_data['creator_id'],
-            options=question_data.get('options'),
-            images=question_data.get('images'),
-            audios=question_data.get('audios'),
-            videos=question_data.get('videos')
-        )
+        question = create_question(**question_data)
         questions.append(question)
 
     try:
         # 批量保存到数据库
-        created_questions = question_dao.batch_create(questions)
+        created_questions: List[Question] = question_dao.batch_create(questions)
         logger.info(f"批量创建问题成功: {created_questions}")
 
         # 转换为响应格式
-        question_responses = [question_to_response(q) for q in created_questions]
+        question_responses = [q.to_dict() for q in created_questions]
 
         return jsonify({
             'code': 0,

@@ -90,7 +90,7 @@ def test_goal_status_enum():
     """测试Goal状态枚举"""
     print("\n🧪 测试Goal状态枚举...")
     
-    statuses = [GoalStatus.PREPARING, GoalStatus.DOING, GoalStatus.PASSED, GoalStatus.CANCELLED]
+    statuses = [GoalStatus.PREPARING, GoalStatus.DOING, GoalStatus.PASSED, GoalStatus.cancelled]
     for status in statuses:
         print(f"   状态: {status}")
 

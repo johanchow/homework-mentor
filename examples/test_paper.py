@@ -92,7 +92,7 @@ def test_paper_dao_operations():
     # 创建测试问题
     question1 = create_question(
         subject=Subject.PHYSICS,
-        type=QuestionType.CHOICE,
+        type=QuestionType.choice,
         title="下列哪个是力的单位？",
         creator_id=saved_user.id,
         options=["牛顿", "焦耳", "瓦特", "安培"]
@@ -101,7 +101,7 @@ def test_paper_dao_operations():
 
     question2 = create_question(
         subject=Subject.CHEMISTRY,
-        type=QuestionType.QA,
+        type=QuestionType.qa,
         title="请解释什么是化学反应？",
         creator_id=saved_user.id
     )
@@ -109,7 +109,7 @@ def test_paper_dao_operations():
 
     question3 = create_question(
         subject=Subject.MATH,
-        type=QuestionType.CHOICE,
+        type=QuestionType.choice,
         title="1 + 1 = ?",
         creator_id=saved_user.id,
         options=["1", "2", "3", "4"]

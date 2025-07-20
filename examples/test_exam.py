@@ -22,7 +22,7 @@ def test_answer_entity():
     # 创建测试问题
     question = create_question(
         subject=Subject.CHINESE,
-        type=QuestionType.CHOICE,
+        type=QuestionType.choice,
         title="下列词语中加点字的读音完全正确的一项是",
         options=["A. 憧憬(chōng jǐng)", "B. 憧憬(chōng jìng)", "C. 憧憬(chōng jīng)", "D. 憧憬(chōng jīng)"],
         creator_id='123'
@@ -78,7 +78,7 @@ def test_exam_entity():
     # 创建测试问题
     question = create_question(
         subject=Subject.CHINESE,
-        type=QuestionType.CHOICE,
+        type=QuestionType.choice,
         title="下列词语中加点字的读音完全正确的一项是",
         options=["A. 憧憬(chōng jǐng)", "B. 憧憬(chōng jìng)", "C. 憧憬(chōng jīng)", "D. 憧憬(chōng jīng)"],
         creator_id='123'
@@ -144,7 +144,7 @@ def test_exam_dao_basic_operations():
     # 创建测试问题
     question = create_question(
         subject=Subject.MATH,
-        type=QuestionType.CHOICE,
+        type=QuestionType.choice,
         title="1 + 1 = ?",
         options=["A. 1", "B. 2", "C. 3", "D. 4"],
         creator_id='123'
@@ -234,7 +234,7 @@ def test_exam_dao_advanced_operations():
     # 创建测试问题
     question = create_question(
         subject=Subject.CHINESE,
-        type=QuestionType.CHOICE,
+        type=QuestionType.choice,
         title="测试题目",
         options=["A", "B", "C", "D"],
         creator_id='123'
@@ -290,7 +290,7 @@ def test_exam_dao_search_operations():
     # 创建测试问题
     question = create_question(
         subject=Subject.MATH,
-        type=QuestionType.CHOICE,
+        type=QuestionType.choice,
         title="测试数学题",
         options=["A", "B", "C", "D"],
         creator_id='123'
@@ -357,7 +357,7 @@ def test_exam_dao_error_handling():
     try:
         question = create_question(
             subject=Subject.CHINESE,
-            type=QuestionType.CHOICE,
+            type=QuestionType.choice,
             title="测试题目",
             options=["A", "B", "C", "D"],
             creator_id='123'
@@ -401,7 +401,7 @@ def test_exam_dao_pagination():
     # 创建测试问题
     question = create_question(
         subject=Subject.CHINESE,
-        type=QuestionType.CHOICE,
+        type=QuestionType.choice,
         title="分页测试题",
         options=["A", "B", "C", "D"],
         creator_id='123'

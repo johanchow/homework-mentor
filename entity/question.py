@@ -12,18 +12,18 @@ import json
 from utils.helpers import random_uuid
 from entity.message import Message, MessageRole
 from entity.user import User
+from utils.transformer import iso_to_mysql_datetime, mysql_datetime_to_iso
 
 logger = logging.getLogger(__name__)
 
 class QuestionType(str, Enum):
     """问题类型枚举"""
-    JUDGE = "judge"                     # 判断题
-    CHOICE = "choice"                   # 选择题
-    QA = "qa"                           # 问答题
-    READING = "reading"                 # 阅读题
-    SUMMARY = "summary"                 # 总结题
-    SHOW = "show"                       # 展示题
-    OTHER = "other"                     # 其他
+    judge = "judge"                     # 判断题
+    choice = "choice"                   # 选择题
+    qa = "qa"                           # 问答题
+    reading = "reading"                 # 阅读题
+    summary = "summary"                 # 总结题
+    show = "show"                       # 展示题
 
 
 class Subject(str, Enum):
@@ -112,8 +112,11 @@ class Question(BaseModel, table=True):
     def from_dict(cls, data: dict) -> 'BaseModel':
         """从字典创建"""
         for field in ['options', 'images', 'audios', 'videos', 'attachments', 'links']:
-            if data.get(field):
+            if isinstance(data.get(field), list):
                 data[field] = ','.join(data[field])
+        for field in ['created_at', 'updated_at']:
+            if data.get(field):
+                data[field] = iso_to_mysql_datetime(data[field])
         return cls(**data)
 
     def to_dict(self) -> dict:
@@ -123,6 +126,8 @@ class Question(BaseModel, table=True):
             value = getattr(self, field)
             if field in ['images', 'audios', 'videos', 'options', 'attachments', 'links']:
                 result[field] = value.split(',') if value else []
+            elif field in ['created_at', 'updated_at']:
+                result[field] = mysql_datetime_to_iso(value)
             else:
                 result[field] = value
         return result
@@ -164,7 +169,7 @@ if __name__ == "__main__":
     # 创建一个选择题示例
     question = create_question(
         subject=Subject.CHINESE,
-        type=QuestionType.CHOICE,
+        type=QuestionType.choice,
         title="下列词语中加点字的读音完全正确的一项是",
         creator_id="user123",
         options=["A. 正确", "B. 错误", "C. 不确定", "D. 以上都不是"],

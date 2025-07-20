@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     """应用配置类"""
 
     # API配置
-    API_HOST: str = "127.0.0.1"
+    API_HOST: str = "0.0.0.0"
     API_PORT: int = 5556
     API_DEBUG: bool = False
 

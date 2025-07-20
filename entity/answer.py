@@ -13,6 +13,11 @@ class Answer(BaseModel):
     # 答案
     answer: Dict[str, str] | None = Field(default=None, description="答案")
 
+    @classmethod
+    def from_dict(cls, data: dict) -> 'Answer':
+        """从字典创建"""
+        return Answer(**data)
+
     def to_dict(self) -> dict:
         """转换为字典格式"""
         return {
@@ -20,4 +25,7 @@ class Answer(BaseModel):
             "messages": {k: [m.to_dict() for m in v] for k, v in self.messages.items()},
             "answer": self.answer
         }
+
+def create_answer(**kwargs) -> Answer:
+    return Answer.from_dict(kwargs)
 

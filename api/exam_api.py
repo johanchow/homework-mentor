@@ -3,11 +3,12 @@
 """
 
 from flask import Blueprint, request, jsonify
-from entity.exam import Exam, Answer, create_exam
+from entity.exam import Exam, ExamStatus, create_exam
+from dao.question_dao import question_dao
 from dao.exam_dao import exam_dao
 from utils.jwt_utils import require_auth, get_current_user_id
-import logging
 import json
+import logging
 
 logger = logging.getLogger(__name__)
 
@@ -45,30 +46,35 @@ def create_exam_api():
         return jsonify({'error': '创建考试失败，请稍后重试'}), 500
 
 
-@exam_bp.route('/<exam_id>/finish', methods=['POST'])
+@exam_bp.route('/finish', methods=['POST'])
 @require_auth
-def finish_exam(exam_id):
+def finish_exam():
     """提交考试答卷（只能修改answer_json字段）"""
+    data = request.get_json()
+    # 验证必需字段
+    required_fields = ['id', 'answer_json']
+    for field in required_fields:
+        if not data.get(field):
+            return jsonify({'error': f'缺少必需字段: {field}'}), 400
+
+    exam_id = data.get('id')
+    answer_json = data.get('answer_json')
     try:
-        data = request.get_json()
-
-        if not data.get('snapshot'):
-            return jsonify({'error': '缺少答卷数据'}), 400
-
         # 验证考试是否存在
         exam = exam_dao.get_by_id(exam_id)
         if not exam:
             return jsonify({'error': '考试不存在'}), 404
 
         # 解析答卷数据
-        try:
-            answer = Answer(**data['snapshot'])
-        except Exception as e:
-            logger.exception(f"答卷数据格式错误: {e}")
-            return jsonify({'error': f'答卷数据格式错误'}), 400
+        # try:
+        #     answer = Answer(**answer_json)
+        # except Exception as e:
+        #     logger.exception(f"答卷数据格式错误: {e}")
+        #     return jsonify({'error': f'答卷数据格式错误'}), 400
 
         # 更新答案
-        exam.answer_json = answer.model_dump_json()
+        exam.answer_json = json.dumps(answer_json)
+        exam.status = ExamStatus.completed
         updated_exam = exam_dao.update(exam)
 
         return jsonify({
@@ -82,10 +88,11 @@ def finish_exam(exam_id):
         return jsonify({'error': '更新答卷失败，请稍后重试'}), 500
 
 
-@exam_bp.route('/<exam_id>', methods=['DELETE'])
+@exam_bp.route('/delete', methods=['DELETE'])
 @require_auth
-def delete_exam(exam_id):
+def delete_exam():
     """删除考试（软删除）"""
+    exam_id = request.args.get('id')
     try:
         # 验证考试是否存在
         exam = exam_dao.get_by_id(exam_id)
@@ -106,29 +113,27 @@ def delete_exam(exam_id):
         return jsonify({'error': '删除考试失败，请稍后重试'}), 500
 
 
-@exam_bp.route('/<exam_id>', methods=['GET'])
+@exam_bp.route('/get', methods=['GET'])
 @require_auth
-def get_exam(exam_id):
+def get_exam():
+    exam_id = request.args.get('id')  # 小于某时间
     """获取单个考试详情"""
     try:
         # 获取考试详细信息
-        exam_details = exam_dao.get_exam_with_details(exam_id)
-        if not exam_details:
+        exam = exam_dao.get_by_id(exam_id)
+        if not exam:
             return jsonify({'error': '考试不存在'}), 404
 
         # 构建返回数据
-        exam_data = exam_details['exam'].to_dict()
-        if exam_details['paper']:
-            exam_data['paper'] = exam_details['paper'].to_dict()
-        if exam_details['examinee']:
-            exam_data['examinee'] = exam_details['examinee'].to_dict()
-        if exam_details['answer']:
-            exam_data['answer'] = exam_details['answer'].to_dict()
+        exam_data = exam.to_dict()
+        if exam.question_ids and len(exam.question_ids) > 0:
+            question_id_list = exam.question_ids.split(',')
+            exam_data['questions'] = [q.to_dict() for q in question_dao.search_by_kwargs({'id': {'$in': question_id_list}}) ]
 
         return jsonify({
             'code': 0,
             'message': '获取考试详情成功',
-            'exam': exam_data
+            'data': exam_data
         }), 200
 
     except Exception as e:
@@ -136,14 +141,12 @@ def get_exam(exam_id):
         return jsonify({'error': '获取考试详情失败，请稍后重试'}), 500
 
 
-@exam_bp.route('/', methods=['GET'])
+@exam_bp.route('/list', methods=['GET'])
 @require_auth
 def list_exams():
     """获取考试列表"""
     try:
         # 获取查询参数
-        paper_id = request.args.get('paper_id')
-        examinee_id = request.args.get('examinee_id')
         plan_starttime_from = request.args.get('plan_starttime_from')  # 大于某时间
         plan_starttime_to = request.args.get('plan_starttime_to')  # 小于某时间
         page = int(request.args.get('page', 1))
@@ -154,11 +157,7 @@ def list_exams():
         limit = size
 
         # 构建查询条件
-        kwargs = {'is_deleted': False}
-        if paper_id:
-            kwargs['paper_id'] = paper_id
-        if examinee_id:
-            kwargs['examinee_id'] = examinee_id
+        kwargs = {'is_deleted': False, 'examinee_id': get_current_user_id()}
         
         # 添加时间过滤条件
         if plan_starttime_from:

@@ -14,8 +14,7 @@ class QuestionDAO(BaseDao):
 
     def search_by_kwargs(self, kwargs: dict, skip: int = 0, limit: int = 100) -> List[Question]:
         # 定义需要模糊匹配的字段
-        fuzzy_fields = ['title']
-        return self._search_by_kwargs(Question, kwargs, skip, limit, fuzzy_fields)
+        return self._search_by_kwargs(Question, kwargs, skip, limit)
 
     def count_by_kwargs(self, kwargs: dict) -> int:
         # 定义需要模糊匹配的字段

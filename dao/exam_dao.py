@@ -29,16 +29,7 @@ class ExamDAO(BaseDao):
     def count_by_kwargs(self, kwargs: dict) -> int:
         """根据关键字统计考试数量"""
         # 考试实体通常不需要模糊匹配，使用相等匹配
-        fuzzy_fields = []
-        return self._count_by_kwargs(Exam, kwargs, fuzzy_fields)
-
-    def list_exams_by_paper_id(self, paper_id: str, skip: int = 0, limit: int = 100) -> List[Exam]:
-        """根据试卷ID获取考试列表"""
-        return self.search_by_kwargs({"paper_id": paper_id}, skip, limit)
-
-    def list_exams_by_examinee_id(self, examinee_id: str, skip: int = 0, limit: int = 100) -> List[Exam]:
-        """根据考生ID获取考试列表"""
-        return self.search_by_kwargs({"examinee_id": examinee_id}, skip, limit)
+        return self._count_by_kwargs(Exam, kwargs)
 
     def get_exam_with_details(self, exam_id: str) -> Optional[Dict[str, Any]]:
         """根据ID获取考试详细信息（包括试卷和考生信息）"""

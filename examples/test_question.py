@@ -20,7 +20,7 @@ def test_question_entity_basic():
 
     question = create_question(
         subject=Subject.CHINESE,
-        type=QuestionType.CHOICE,
+        type=QuestionType.choice,
         title="下列词语中加点字的读音完全正确的一项是",
         creator_id="test_user_123",
         options=["A. 正确", "B. 错误", "C. 不确定", "D. 以上都不是"],
@@ -37,7 +37,7 @@ def test_question_entity_basic():
     print(f"图片: {question.images}")
 
     assert question.subject == Subject.CHINESE
-    assert question.type == QuestionType.CHOICE
+    assert question.type == QuestionType.choice
     assert question.title == "下列词语中加点字的读音完全正确的一项是"
     assert question.options == "A. 正确,B. 错误,C. 不确定,D. 以上都不是"
     assert question.images == "https://example.com/image1.jpg"
@@ -51,7 +51,7 @@ def test_question_entity_methods():
 
     question = create_question(
         subject=Subject.MATH,
-        type=QuestionType.QA,
+        type=QuestionType.qa,
         title="请计算 2 + 2 = ?",
         creator_id="test_user_456"
     )
@@ -108,7 +108,7 @@ def test_question_dao_operations():
     # 测试创建问题
     question1 = create_question(
         subject=Subject.PHYSICS,
-        type=QuestionType.CHOICE,
+        type=QuestionType.choice,
         title="下列哪个是力的单位？",
         creator_id=saved_user.id,
         options=["牛顿", "焦耳", "瓦特", "安培"],
@@ -122,7 +122,7 @@ def test_question_dao_operations():
     # 测试创建第二个问题
     question2 = create_question(
         subject=Subject.CHEMISTRY,
-        type=QuestionType.QA,
+        type=QuestionType.qa,
         title="请解释什么是化学反应？",
         creator_id=saved_user.id,
         videos=["https://example.com/chemistry.mp4"]
@@ -171,7 +171,7 @@ def test_question_edge_cases():
     # 测试空选项和媒体文件
     empty_question = create_question(
         subject=Subject.ENGLISH,
-        type=QuestionType.JUDGE,
+        type=QuestionType.judge,
         title="这是一个判断题",
         creator_id="test_user_edge"
     )
@@ -202,7 +202,7 @@ def test_question_serialization():
 
     question = create_question(
         subject=Subject.BIOLOGY,
-        type=QuestionType.CHOICE,
+        type=QuestionType.choice,
         title="下列哪个是细胞的基本结构？",
         creator_id="test_user_serial",
         options=["细胞膜", "细胞核", "细胞质", "以上都是"],
@@ -244,7 +244,7 @@ def test_question_search_functionality():
     # 创建不同科目的问题
     math_question = create_question(
         subject=Subject.MATH,
-        type=QuestionType.CHOICE,
+        type=QuestionType.choice,
         title="数学问题：1+1=?",
         creator_id=saved_user.id
     )
@@ -252,7 +252,7 @@ def test_question_search_functionality():
 
     physics_question = create_question(
         subject=Subject.PHYSICS,
-        type=QuestionType.QA,
+        type=QuestionType.qa,
         title="物理问题：什么是重力？",
         creator_id=saved_user.id
     )
@@ -264,7 +264,7 @@ def test_question_search_functionality():
     assert len(math_questions) >= 1
 
     # 测试按类型搜索
-    choice_questions = question_dao.search_by_kwargs({"type": QuestionType.CHOICE})
+    choice_questions = question_dao.search_by_kwargs({"type": QuestionType.choice})
     print(f"选择题数量: {len(choice_questions)}")
     assert len(choice_questions) >= 1
 

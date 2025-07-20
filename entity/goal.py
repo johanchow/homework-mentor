@@ -16,7 +16,7 @@ class GoalStatus(str, Enum):
     PREPARING = 'preparing'  # 准备中
     DOING = 'doing'  # 进行中
     PASSED = 'passed'  # 已通过
-    CANCELLED = "cancelled"  # 已取消
+    cancelled = "cancelled"  # 已取消
 
 
 class Subject(str, Enum):
@@ -88,7 +88,7 @@ if __name__ == "__main__":
         subject=Subject.MATH,
         ai_prompt="请帮助我理解初中数学中的函数概念，包括定义、性质和应用",
         creator_id="user123",
-        status=GoalStatus.PENDING,
+        status=GoalStatus.pending,
     )
 
     print(goal)

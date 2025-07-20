@@ -22,25 +22,17 @@ def create_exam_api():
         data = request.get_json()
 
         # 验证必需字段
-        required_fields = ['goal_id', 'examinee_id', 'question_id_list']
+        required_fields = ['goal_id', 'examinee_id', 'question_ids', 'plan_starttime', 'plan_duration']
         for field in required_fields:
             if not data.get(field):
                 return jsonify({'error': f'缺少必需字段: {field}'}), 400
 
-        goal_id = data.get('goal_id')
-        examinee_id = data.get('examinee_id')
-        question_id_list = data.get('question_id_list')
-
         # 创建考试
-        exam = create_exam(
-            goal_id=goal_id,
-            examinee_id=examinee_id,
-            question_id_list=question_id_list,
-            answer=None
-        )
+        exam = create_exam(**data)
 
         # 保存到数据库
         saved_exam = exam_dao.create(exam)
+        print(saved_exam.to_dict())
 
         return jsonify({
             'code': 0,

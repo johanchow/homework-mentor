@@ -84,11 +84,11 @@ def test_question_fuzzy_search():
     
     # 创建测试数据
     test_questions = [
-        create_question(QSubject.MATH, QuestionType.CHOICE, "什么是导数？", "user1"),
-        create_question(QSubject.ENGLISH, QuestionType.QA, "英语时态有哪些？", "user1"),
-        create_question(QSubject.MATH, QuestionType.CHOICE, "函数的定义是什么？", "user2"),
-        create_question(QSubject.PHYSICS, QuestionType.JUDGE, "牛顿第一定律正确吗？", "user2"),
-        create_question(QSubject.ENGLISH, QuestionType.CHOICE, "英语语法规则", "user1")
+        create_question(QSubject.MATH, QuestionType.choice, "什么是导数？", "user1"),
+        create_question(QSubject.ENGLISH, QuestionType.qa, "英语时态有哪些？", "user1"),
+        create_question(QSubject.MATH, QuestionType.choice, "函数的定义是什么？", "user2"),
+        create_question(QSubject.PHYSICS, QuestionType.judge, "牛顿第一定律正确吗？", "user2"),
+        create_question(QSubject.ENGLISH, QuestionType.choice, "英语语法规则", "user1")
     ]
     
     # 保存到数据库
@@ -119,7 +119,7 @@ def test_question_fuzzy_search():
     print(f"   科目为数学: 找到 {len(math_questions)} 个问题")
     
     # 按类型精确匹配
-    choice_questions = question_dao.search_by_kwargs({"type": QuestionType.CHOICE})
+    choice_questions = question_dao.search_by_kwargs({"type": QuestionType.choice})
     print(f"   类型为选择题: 找到 {len(choice_questions)} 个问题")
     
     # 清理测试数据

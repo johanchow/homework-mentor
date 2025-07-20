@@ -5,7 +5,6 @@ from sqlalchemy import func
 from sqlmodel import Session, select, update, delete
 from datetime import datetime
 import logging
-import re
 
 logger = logging.getLogger(__name__)
 

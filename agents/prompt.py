@@ -13,16 +13,16 @@ def get_import_prompt(question: Question) -> List[Message]:
     type(类型):{question.type}
     title(题目):{question.title}
     tip(提示或要求): {question.tip}
-    {question.type == QuestionType.CHOICE and f"options(选项): {question.options.join(' | ')}" or ""}
+    {question.type == QuestionType.choice and f"options(选项): {question.options.join(' | ')}" or ""}
     """
-    if question.type == QuestionType.READING:
+    if question.type == QuestionType.reading:
         if len(images) > 0 or len(audios) > 0 or len(videos) > 0 or len(attachments) > 0:
             question_prompt += f"阅读材料在上传文件里，请把文件中需要阅读的{question.subject}全部提取出来"
         else:
             question_prompt += f"阅读材料可能在题目里，请把题目中需要阅读的内容分割提取出来"
-    elif question.type == QuestionType.SUMMARY:
+    elif question.type == QuestionType.summary:
         question_prompt += f"请根据上传的材料，题目和要求，总结出答案"
-    elif question.type == QuestionType.CHOICE:
+    elif question.type == QuestionType.choice:
         question_prompt += f"选项可能在题目里，也可能在提示里"
 
     example = {

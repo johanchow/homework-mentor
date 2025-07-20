@@ -11,32 +11,10 @@ from dao.paper_dao import paper_dao
 from dao.user_dao import user_dao
 from dao.question_dao import question_dao
 from utils.jwt_utils import require_auth
-from .question_api import question_to_response
 
 logger = logging.getLogger(__name__)
 
 paper_bp = Blueprint('paper', __name__, url_prefix='/paper')
-
-
-# # 工具函数
-# def question_to_response(question: Question) -> dict:
-#     """将Question实体转换为响应格式"""
-#     return {
-#         "id": question.id,
-#         "subject": question.subject,
-#         "type": question.type,
-#         "title": question.title,
-#         "options": question.options,
-#         "images": question.images,
-#         "audios": question.audios,
-#         "videos": question.videos,
-#         "creator_id": question.creator_id,
-#         "created_at": question.created_at.isoformat(),
-#         "updated_at": question.updated_at.isoformat(),
-#         "is_active": question.is_active,
-#         "is_deleted": question.is_deleted
-#     }
-
 
 def paper_to_response(paper: Paper) -> dict:
     """将Paper实体转换为响应格式"""
@@ -68,7 +46,7 @@ def paper_to_detail_response(paper: Paper) -> dict:
         for qid in question_id_list:
             question = question_dao.get_by_id(qid)
             if question:
-                questions.append(question_to_response(question))
+                questions.append(question.to_dict())
 
     return {
         "id": paper.id,

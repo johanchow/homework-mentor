@@ -103,21 +103,16 @@ def parse_questions_from_images():
     })
 
 @ai_bp.route('/analyze-question', methods=['POST'])
-def analyze_question_answer():
+def analyze_question():
     """分析题目和答案"""
     data = request.get_json()
-    session = create_session(TopicType.IMPORT, '')
-    session.question = create_question(**data.get('question'))
-    agent_graph.invoke({
-        "session": session,
-        "latest_message": "",
-    })
-    new_question = session.question
+    question = create_question(**data.get('question'))
+    question.refresh_material()
     return jsonify({
         "code": 0,
         "message": "success",
         "data": {
-            "question": new_question.to_dict()
+            "question": question.to_dict()
         }
     })
 

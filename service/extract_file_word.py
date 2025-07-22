@@ -191,6 +191,8 @@ class TextExtractor:
                     
                     # 2. 提取图片中的文字
                     if shape.shape_type == 13:  # 图片类型
+                        if shape.image.ext.lower() == 'wmf':
+                            return ''  # 旧版ppt文件中的图片格式，不好处理，跳过
                         try:
                             image_text = self._extract_text_from_ppt_image(shape)
                             if image_text.strip():
@@ -360,7 +362,7 @@ if __name__ == "__main__":
         "https://clothing-try-on-1306401232.cos.ap-guangzhou.myqcloud.com/homework-mentor/1752582737-1b_13.pdf",
         "https://clothing-try-on-1306401232.cos.ap-guangzhou.myqcloud.com/homework-mentor/1752970995-11111.jpeg",
         # "https://clothing-try-on-1306401232.cos.ap-guangzhou.myqcloud.com/homework-mentor/1b_16.ppt",
-        "https://clothing-try-on-1306401232.cos.ap-guangzhou.myqcloud.com/homework-mentor/1b_17.pptx",
+        "https://clothing-try-on-1306401232.cos.ap-guangzhou.myqcloud.com/homework-mentor/abcdefg.pptx",
     ]
     
     for url in test_urls:

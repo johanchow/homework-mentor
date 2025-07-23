@@ -1,22 +1,22 @@
 """
-会话数据访问对象 - 提供会话相关的数据库操作
+会话数据访问对象 - 提供会话相关的数据库操作 - 异步版本
 """
 
 from typing import List, Optional, Dict, Any
-from sqlmodel import Session as DBSession, select, update, delete
+from sqlmodel import select, update, delete
 from datetime import datetime
 from entity.session import Session, TopicType
 from entity.message import Message, MessageRole, MessageType
 from dao.base_dao import BaseDao
-from dao.question_dao import QuestionDAO
-from dao.goal_dao import GoalDAO
+from dao.question_dao import question_dao
+from dao.goal_dao import goal_dao
 import json
 from entity.message import create_message
 
 class SessionDAO(BaseDao):
     """会话数据访问对象"""
 
-    def get_by_id(self, id: str) -> Session:
+    async def get_by_id(self, id: str) -> Session:
         """
         根据ID获取会话
 
@@ -26,13 +26,13 @@ class SessionDAO(BaseDao):
         Returns:
             会话对象
         """
-        session = self._get_by_id(Session, id)
+        session = await self._get_by_id(Session, id)
         # 手动初始化 pydantic private attr
         if session.__pydantic_private__ is None:
             session.__pydantic_private__ = type(session)().__pydantic_private__
         return session
 
-    def search_by_kwargs(self, kwargs: dict, skip: int = 0, limit: int = 100) -> List[Session]:
+    async def search_by_kwargs(self, kwargs: dict, skip: int = 0, limit: int = 100) -> List[Session]:
         """
         根据关键字搜索会话
 
@@ -44,9 +44,9 @@ class SessionDAO(BaseDao):
         Returns:
             会话列表
         """
-        return self._search_by_kwargs(Session, kwargs, skip, limit)
+        return await self._search_by_kwargs(Session, kwargs, skip, limit)
 
-    def count_by_kwargs(self, kwargs: dict) -> int:
+    async def count_by_kwargs(self, kwargs: dict) -> int:
         """
         根据关键字统计会话数量
 
@@ -56,21 +56,21 @@ class SessionDAO(BaseDao):
         Returns:
             会话数量
         """
-        return self._count_by_kwargs(Session, kwargs)
+        return await self._count_by_kwargs(Session, kwargs)
 
-    def get_full_by_id(self, id: str) -> Session:
+    async def get_full_by_id(self, id: str) -> Session:
         """
         根据ID获取会话
         """
-        session = self.get_by_id(id)
+        session = await self.get_by_id(id)
         if session.topic == TopicType.GUIDE and session.topic_id:
-            session.question = QuestionDAO.get_by_id(session.topic_id)
+            session.question = await question_dao.get_by_id(session.topic_id)
         elif session.topic == TopicType.RAISE and session.topic_id:
-            session.goal = GoalDAO.get_by_id(session.topic_id)
+            session.goal = await goal_dao.get_by_id(session.topic_id)
         return session
             
 
-    def add_message(self, session_id: str, message: Message) -> Optional[Session]:
+    async def add_message(self, session_id: str, message: Message) -> Optional[Session]:
         """
         向会话添加消息
 
@@ -81,7 +81,7 @@ class SessionDAO(BaseDao):
         Returns:
             更新后的会话对象，如果会话不存在则返回None
         """
-        session = self.get_by_id(session_id)
+        session = await self.get_by_id(session_id)
         if not session:
             return None
 
@@ -93,14 +93,14 @@ class SessionDAO(BaseDao):
         
         # 更新会话
         session.messages = json.dumps(messages_list, ensure_ascii=False)
-        return self.update(session)
+        return await self.update(session)
 
-    def add_user_message(self, session_id: str, message_content: str) -> Optional[Session]:
+    async def add_user_message(self, session_id: str, message_content: str) -> Optional[Session]:
         """
         向会话添加用户消息
         """
         message = create_message(role=MessageRole.USER, content=message_content, message_type=MessageType.TEXT)
-        return self.add_message(session_id, message)
+        return await self.add_message(session_id, message)
 
 session_dao = SessionDAO()
 

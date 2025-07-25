@@ -4,7 +4,7 @@
 
 import asyncio
 import sys
-from api.app import create_app
+from api.app import app
 from config.settings import settings
 from utils.helpers import setup_logging
 
@@ -14,9 +14,6 @@ def main():
     logger = setup_logging()
 
     try:
-        # 创建Flask应用
-        app = create_app()
-
         # 配置
         app.config['SECRET_KEY'] = 'your-secret-key-here'
         app.config['JSON_AS_ASCII'] = False  # 支持中文

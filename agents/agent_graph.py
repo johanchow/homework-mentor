@@ -1,3 +1,4 @@
+import asyncio
 from typing import TypedDict, List, Any, Annotated, Sequence
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import START, MessagesState, StateGraph
@@ -36,29 +37,29 @@ def decide_route(state: AgentState):
 
 
 # Define the function that calls the model
-def call_chinese_guide(state: AgentState):
+async def call_chinese_guide(state: AgentState):
     print('call chinese guide', state)
     chinese_agent = get_chinese_agent()
     session = state["session"]
-    resp_content = chinese_agent.process_guide(state["session"], state["latest_message"])
+    resp_content = await chinese_agent.process_guide(state["session"], state["latest_message"])
     session.add_message(Message(role=MessageRole.ASSISTANT, content=resp_content))
     return {"session": session}
 
-def call_chinese_raiser(state: AgentState):
+async def call_chinese_raiser(state: AgentState):
     chinese_agent = get_chinese_agent()
     session = state["session"]
-    questions = chinese_agent.process_raise(state["session"], state["latest_message"])
+    questions = await chinese_agent.process_raise(state["session"], state["latest_message"])
     return {"session": session, "questions": questions}
 
-def call_english_import(state: AgentState):
+async def call_english_import(state: AgentState):
     chinese_agent = get_chinese_agent()
     session = state["session"]
-    questions = chinese_agent.process_import(state["session"], state["latest_message"])
+    questions = await chinese_agent.process_import(state["session"], state["latest_message"])
     return {"session": session, "questions": questions}
 
-def call_gossip_agent(state: AgentState):
+async def call_gossip_agent(state: AgentState):
     gossip_agent = get_gossip_agent()
-    response = gossip_agent.process_guide(state["session"], state["latest_message"])
+    response = await gossip_agent.process_guide(state["session"], state["latest_message"])
     return {"messages": response}
 
 
@@ -90,32 +91,35 @@ if __name__ == "__main__":
     print('----------- load_dotenv -----------')
     load_dotenv('.env')
 
-    question = Question(
-        subject=Subject.CHINESE,
-        question_type=QuestionType.MULTIPLE_CHOICE,
-        title="请描述下面图片内容",
-        images=[
-            "https://gips2.baidu.com/it/u=1651586290,17201034&fm=3028&app=3028&f=JPEG&fmt=auto&q=100&size=f600_800",
-        ]
-    )
-    session = Session(session_id="1234567890", question=question)
-    message1 = Message.from_dict({
-        "role": "user",
-        "content":  "一般可以从哪些角度描述图片？",
-    })
-    resp1 = agent_graph.invoke({
-        "session": session,
-        "latest_message": message1,
-    }, config={"configurable": {"thread_id": "1234567890"}})
-    print('resp1', resp1)
+    async def test_agent():
+        question = Question(
+            subject=Subject.CHINESE,
+            question_type=QuestionType.MULTIPLE_CHOICE,
+            title="请描述下面图片内容",
+            images=[
+                "https://gips2.baidu.com/it/u=1651586290,17201034&fm=3028&app=3028&f=JPEG&fmt=auto&q=100&size=f600_800",
+            ]
+        )
+        session = Session(session_id="1234567890", question=question)
+        message1 = Message.from_dict({
+            "role": "user",
+            "content":  "一般可以从哪些角度描述图片？",
+        })
+        resp1 = await agent_graph.ainvoke({
+            "session": session,
+            "latest_message": message1,
+        }, config={"configurable": {"thread_id": "1234567890"}})
+        print('resp1', resp1)
 
-    message2 = Message.from_dict({
-        "role": "user",
-        "content": "我刚刚问了什么问题?"
-    })
-    resp2 = agent_graph.invoke({
-        "session": session,
-        "latest_message": message2,
-    }, config={"configurable": {"thread_id": "1234567890"}})
-    print('resp2', resp2)
+        message2 = Message.from_dict({
+            "role": "user",
+            "content": "我刚刚问了什么问题?"
+        })
+        resp2 = await agent_graph.ainvoke({
+            "session": session,
+            "latest_message": message2,
+        }, config={"configurable": {"thread_id": "1234567890"}})
+        print('resp2', resp2)
+
+    asyncio.run(test_agent())
 

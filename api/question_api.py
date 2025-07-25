@@ -1,20 +1,74 @@
 """
-问题API - 提供问题相关的RESTful接口
+问题API - 提供问题相关的RESTful接口 - FastAPI异步版本
 """
 
-from flask import Blueprint, request, jsonify
+from fastapi import APIRouter, HTTPException, Depends, Query, Body, Request
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 import json
 import logging
 from dao.question_dao import question_dao
 from dao.user_dao import user_dao
 from entity.question import Question, QuestionType, Subject, create_question
-from utils.jwt_utils import require_auth
+from utils.jwt_utils import verify_token
+from utils.exceptions import DataNotFoundException, ValidationException, BusinessException
 
 logger = logging.getLogger(__name__)
 
-question_bp = Blueprint('question', __name__, url_prefix='/question')
+question_router = APIRouter(prefix="/question", tags=["问题管理"])
+
+
+# 统一响应模型
+class BaseResponse(BaseModel):
+    code: int = 0
+    message: str
+    data: Optional[Dict[str, Any]] = None
+
+
+# 请求模型
+class QuestionCreateRequest(BaseModel):
+    """创建问题的请求模型"""
+    subject: Subject
+    type: QuestionType
+    title: str
+    creator_id: str
+    options: Optional[List[str]] = None
+    images: Optional[List[str]] = None
+    audios: Optional[List[str]] = None
+    videos: Optional[List[str]] = None
+
+
+class QuestionUpdateRequest(BaseModel):
+    """更新问题的请求模型"""
+    subject: Optional[Subject] = None
+    type: Optional[QuestionType] = None
+    title: Optional[str] = None
+    options: Optional[List[str]] = None
+    images: Optional[List[str]] = None
+    audios: Optional[List[str]] = None
+    videos: Optional[List[str]] = None
+    is_active: Optional[bool] = None
+
+
+class QuestionBatchCreateRequest(BaseModel):
+    """批量创建问题的请求模型"""
+    questions: List[QuestionCreateRequest]
+
+
+# 认证依赖
+async def get_current_user_id(request: Request) -> str:
+    """获取当前用户ID"""
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not auth_header.startswith('Bearer '):
+        raise HTTPException(status_code=401, detail="缺少认证token")
+    
+    token = auth_header.split(' ')[1]
+    payload = verify_token(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="无效或过期的token")
+    
+    return payload.get('user_id')
 
 
 # 请求模型
@@ -81,17 +135,16 @@ class QuestionBatchCreateResponse(BaseModel):
     questions: List[QuestionResponse]
 
 
-def validate_creator_exists(creator_id: str) -> bool:
+async def validate_creator_exists(creator_id: str) -> bool:
     """验证创建人是否存在"""
-    creator = user_dao.get_by_id(creator_id)
+    creator = await user_dao.get_by_id(creator_id)
     return creator is not None
 
 
 # API接口
 
-@question_bp.route('/create', methods=['POST'])
-@require_auth
-def create_question_api():
+@question_router.post("/create", response_model=BaseResponse)
+async def create_question_api(request: QuestionCreateRequest, current_user_id: str = Depends(get_current_user_id)):
     """
     创建单个问题
 
@@ -106,73 +159,44 @@ def create_question_api():
     - videos: 视频列表（可选）
     """
     try:
-        data = request.get_json()
-
-        # 验证必需字段
-        required_fields = ['subject', 'type', 'title', 'creator_id']
-        for field in required_fields:
-            if not data.get(field):
-                return jsonify({'error': f'缺少必需字段: {field}'}), 400
-
         # 验证创建人是否存在
-        if not validate_creator_exists(data['creator_id']):
-            return jsonify({'error': '创建人不存在'}), 400
+        creator = await user_dao.get_by_id(request.creator_id)
+        if not creator:
+            raise DataNotFoundException("创建人", request.creator_id)
 
         # 创建问题
         question = create_question(
-            subject=data['subject'],
-            type=data['type'],
-            title=data['title'],
-            creator_id=data['creator_id'],
-            options=data.get('options'),
-            images=data.get('images'),
-            audios=data.get('audios'),
-            videos=data.get('videos')
+            subject=request.subject,
+            type=request.type,
+            title=request.title,
+            creator_id=request.creator_id,
+            options=request.options,
+            images=request.images,
+            audios=request.audios,
+            videos=request.videos
         )
 
         # 保存到数据库
-        created_question = question_dao.create(question)
+        created_question = await question_dao.create(question)
 
         logger.info(f"创建问题成功: {created_question.id}")
-        return jsonify({
-            'code': 0,
-            'message': '问题创建成功',
-            'question': created_question.to_dict()
-        }), 201
+        return BaseResponse(
+            message='问题创建成功',
+            data=created_question.to_dict()
+        )
 
+    except BusinessException:
+        raise
     except Exception as e:
         logger.error(f"创建问题失败: {e}")
-        return jsonify({'error': f'创建问题失败: {str(e)}'}), 500
+        raise HTTPException(status_code=500, detail=f"创建问题失败: {str(e)}")
 
 
-@question_bp.route('/<question_id>', methods=['GET'])
-@require_auth
-def get_question_api(question_id):
-    """
-    根据ID获取问题详情
-
-    路径参数:
-    - question_id: 问题ID
-    """
-    try:
-        question = question_dao.get_by_id(question_id)
-        if not question:
-            return jsonify({'error': '问题不存在'}), 404
-
-        return jsonify({
-            'code': 0,
-            'message': '获取问题详情成功',
-            'question': question.to_dict()
-        }), 200
-
-    except Exception as e:
-        logger.error(f"获取问题失败: {e}")
-        return jsonify({'error': f'获取问题失败: {str(e)}'}), 500
 
 
-@question_bp.route('/<question_id>', methods=['PUT'])
-@require_auth
-def update_question_api(question_id):
+
+@question_router.put("/{question_id}", response_model=BaseResponse)
+async def update_question_api(question_id: str, request: QuestionUpdateRequest, current_user_id: str = Depends(get_current_user_id)):
     """
     更新问题信息
 
@@ -190,49 +214,47 @@ def update_question_api(question_id):
     - is_active: 是否激活（可选）
     """
     try:
-        data = request.get_json()
-
         # 获取现有问题
-        question = question_dao.get_by_id(question_id)
+        question = await question_dao.get_by_id(question_id)
         if not question:
-            return jsonify({'error': '问题不存在'}), 404
+            raise DataNotFoundException("问题", question_id)
 
         # 更新字段
-        if 'subject' in data:
-            question.subject = data['subject']
-        if 'type' in data:
-            question.type = data['type']
-        if 'title' in data:
-            question.title = data['title']
-        if 'options' in data:
-            question.options = ",".join(data['options']) if data['options'] else None
-        if 'images' in data:
-            question.images = ",".join(data['images']) if data['images'] else None
-        if 'audios' in data:
-            question.audios = ",".join(data['audios']) if data['audios'] else None
-        if 'videos' in data:
-            question.videos = ",".join(data['videos']) if data['videos'] else None
-        if 'is_active' in data:
-            question.is_active = data['is_active']
+        if request.subject is not None:
+            question.subject = request.subject
+        if request.type is not None:
+            question.type = request.type
+        if request.title is not None:
+            question.title = request.title
+        if request.options is not None:
+            question.options = ",".join(request.options) if request.options else None
+        if request.images is not None:
+            question.images = ",".join(request.images) if request.images else None
+        if request.audios is not None:
+            question.audios = ",".join(request.audios) if request.audios else None
+        if request.videos is not None:
+            question.videos = ",".join(request.videos) if request.videos else None
+        if request.is_active is not None:
+            question.is_active = request.is_active
 
         # 保存更新
-        updated_question = question_dao.update(question)
+        updated_question = await question_dao.update(question)
 
         logger.info(f"更新问题成功: {updated_question.id}")
-        return jsonify({
-            'code': 0,
-            'message': '问题更新成功',
-            'question': updated_question.to_dict()
-        }), 200
+        return BaseResponse(
+            message='问题更新成功',
+            data=updated_question.to_dict()
+        )
 
+    except BusinessException:
+        raise
     except Exception as e:
         logger.error(f"更新问题失败: {e}")
-        return jsonify({'error': f'更新问题失败: {str(e)}'}), 500
+        raise HTTPException(status_code=500, detail=f"更新问题失败: {str(e)}")
 
 
-@question_bp.route('/<question_id>', methods=['DELETE'])
-@require_auth
-def delete_question_api(question_id):
+@question_router.delete("/{question_id}", response_model=BaseResponse)
+async def delete_question_api(question_id: str, current_user_id: str = Depends(get_current_user_id)):
     """
     删除问题（软删除）
 
@@ -241,28 +263,36 @@ def delete_question_api(question_id):
     """
     try:
         # 获取问题
-        question = question_dao.get_by_id(question_id)
+        question = await question_dao.get_by_id(question_id)
         if not question:
-            return jsonify({'error': '问题不存在'}), 404
+            raise DataNotFoundException("问题", question_id)
 
         # 软删除
-        question_dao.delete(question)
+        await question_dao.delete(question)
 
         logger.info(f"删除问题成功: {question_id}")
-        return jsonify({
-            'code': 0,
-            'message': '问题删除成功',
-            'question_id': question_id
-        }), 200
+        return BaseResponse(
+            message='问题删除成功',
+            data={"question_id": question_id}
+        )
 
+    except BusinessException:
+        raise
     except Exception as e:
         logger.error(f"删除问题失败: {e}")
-        return jsonify({'error': f'删除问题失败: {str(e)}'}), 500
+        raise HTTPException(status_code=500, detail=f"删除问题失败: {str(e)}")
 
 
-@question_bp.route('/list', methods=['GET'])
-@require_auth
-def list_questions_api():
+@question_router.get("/list", response_model=BaseResponse)
+async def list_questions_api(
+    subject: Optional[str] = Query(None, description="科目筛选"),
+    question_type: Optional[str] = Query(None, description="问题类型筛选"),
+    creator_id: Optional[str] = Query(None, description="创建人ID筛选"),
+    is_active: Optional[bool] = Query(None, description="是否激活筛选"),
+    page: int = Query(1, description="页码，默认1"),
+    page_size: int = Query(10, description="每页数量，默认10"),
+    current_user_id: str = Depends(get_current_user_id)
+):
     """
     获取问题列表，支持筛选和分页
 
@@ -272,20 +302,12 @@ def list_questions_api():
     - creator_id: 创建人ID筛选（可选）
     - is_active: 是否激活筛选（可选）
     - page: 页码，默认1
-    - size: 每页数量，默认10
+    - page_size: 每页数量，默认10
     """
     try:
-        # 获取查询参数
-        subject = request.args.get('subject')
-        question_type = request.args.get('type')
-        creator_id = request.args.get('creator_id')
-        is_active = request.args.get('is_active')
-        page = int(request.args.get('page', 1))
-        size = int(request.args.get('size', 10))
-
         # 计算分页参数
-        skip = (page - 1) * size
-        limit = size
+        skip = (page - 1) * page_size
+        limit = page_size
 
         # 构建筛选条件
         filters = {}
@@ -296,86 +318,110 @@ def list_questions_api():
         if creator_id is not None:
             filters["creator_id"] = creator_id
         if is_active is not None:
-            filters["is_active"] = is_active.lower() == 'true'
+            filters["is_active"] = is_active
 
         # 查询问题列表
-        questions = question_dao.search_by_kwargs(filters, skip=skip, limit=limit)
+        questions = await question_dao.search_by_kwargs(filters, skip=skip, limit=limit)
 
         # 统计总数
-        total = question_dao.count_by_kwargs(filters)
+        total = await question_dao.count_by_kwargs(filters)
 
         # 转换为响应格式
         question_responses = [q.to_dict() for q in questions]
 
-        return jsonify({
-            'code': 0,
-            'message': '获取问题列表成功',
-            'data': {
+        return BaseResponse(
+            message='获取问题列表成功',
+            data={
                 'questions': question_responses,
                 'total': total,
                 'page': page,
-                'size': size,
-                'pages': (total + size - 1) // size
+                'page_size': page_size,
+                'pages': (total + page_size - 1) // page_size
             }
-        }), 200
+        )
 
     except Exception as e:
         logger.exception(f"获取问题列表失败: {e}")
-        return jsonify({'error': f'获取问题列表失败: {str(e)}'}), 500
+        raise HTTPException(status_code=500, detail=f"获取问题列表失败: {str(e)}")
 
 
-@question_bp.route('/batch-create', methods=['POST'])
-@require_auth
-def batch_create_questions_api():
+@question_router.get("/{question_id}", response_model=BaseResponse)
+async def get_question_api(question_id: str, current_user_id: str = Depends(get_current_user_id)):
+    """
+    根据ID获取问题详情
+
+    路径参数:
+    - question_id: 问题ID
+    """
+    try:
+        question = await question_dao.get_by_id(question_id)
+        if not question:
+            raise DataNotFoundException("问题", question_id)
+
+        return BaseResponse(
+            message='获取问题详情成功',
+            data=question.to_dict()
+        )
+
+    except BusinessException:
+        raise
+    except Exception as e:
+        logger.error(f"获取问题失败: {e}")
+        raise HTTPException(status_code=500, detail=f"获取问题失败: {str(e)}")
+
+
+
+@question_router.post("/batch-create", response_model=BaseResponse)
+async def batch_create_questions_api(request: QuestionBatchCreateRequest, current_user_id: str = Depends(get_current_user_id)):
     """
     批量创建问题
 
     请求参数:
     - questions: 问题列表
     """
-    data = request.get_json()
-
-    if not data.get('questions'):
-        return jsonify({'error': '缺少问题列表'}), 400
-
-    questions = []
-    errors = []
-
-    for index, question_data in enumerate(data['questions']):
-        # 验证必需字段
-        required_fields = ['subject', 'type', 'title', 'creator_id']
-        for field in required_fields:
-            if not question_data.get(field):
-                errors.append(f'缺少必需字段: {field}')
-                return jsonify({'error': f'第{index+1}个问题缺少必需字段: {field}'}), 400
-
-        # 验证创建人是否存在
-        if not validate_creator_exists(question_data['creator_id']):
-            errors.append(f"创建人不存在: {question_data['creator_id']}")
-            return jsonify({'error': f'第{index+1}个问题创建人不存在: {question_data['creator_id']}'}), 400
-
-
-        # 创建问题
-        question = create_question(**question_data)
-        questions.append(question)
-
     try:
+        if not request.questions:
+            raise ValidationException("questions", "缺少问题列表")
+
+        questions = []
+        errors = []
+
+        for index, question_data in enumerate(request.questions):
+            # 验证创建人是否存在
+            creator = await user_dao.get_by_id(question_data.creator_id)
+            if not creator:
+                raise DataNotFoundException(f"第{index+1}个问题创建人", question_data.creator_id)
+
+            # 创建问题
+            question = create_question(
+                subject=question_data.subject,
+                type=question_data.type,
+                title=question_data.title,
+                creator_id=question_data.creator_id,
+                options=question_data.options,
+                images=question_data.images,
+                audios=question_data.audios,
+                videos=question_data.videos
+            )
+            questions.append(question)
+
         # 批量保存到数据库
-        created_questions: List[Question] = question_dao.batch_create(questions)
+        created_questions: List[Question] = await question_dao.batch_create(questions)
         logger.info(f"批量创建问题成功: {created_questions}")
 
         # 转换为响应格式
         question_responses = [q.to_dict() for q in created_questions]
 
-        return jsonify({
-            'code': 0,
-            'message': '批量创建问题完成',
-            'data': {
+        return BaseResponse(
+            message='批量创建问题完成',
+            data={
                 'questions': question_responses,
             }
-        }), 200
+        )
 
+    except BusinessException:
+        raise
     except Exception as e:
         logger.error(f"批量创建问题失败: {e}")
-        return jsonify({'error': f'批量创建问题失败: {str(e)}'}), 500
+        raise HTTPException(status_code=500, detail=f"批量创建问题失败: {str(e)}")
 

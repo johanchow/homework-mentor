@@ -12,6 +12,7 @@ from entity.goal import Goal, GoalStatus, Subject, create_goal
 from dao.goal_dao import goal_dao
 from dao.user_dao import user_dao
 from utils.jwt_utils import verify_token
+from utils.exceptions import DataNotFoundException, ValidationException, BusinessException
 
 logger = logging.getLogger(__name__)
 
@@ -95,7 +96,7 @@ async def create_goal_api(request: CreateGoalRequest, current_user_id: str = Dep
         # 验证创建人是否存在
         creator = await user_dao.get_by_id(request.creator_id)
         if not creator:
-            raise HTTPException(status_code=400, detail="创建人不存在")
+            raise DataNotFoundException("创建人", request.creator_id)
 
         # 创建目标
         goal = create_goal(
@@ -189,14 +190,14 @@ async def get_goal_api(id: str = Query(..., description="目标ID"), current_use
     try:
         goal = await goal_dao.get_by_id(id)
         if not goal:
-            raise HTTPException(status_code=404, detail="目标不存在")
+            raise DataNotFoundException("目标", id)
 
         return BaseResponse(
             message='获取目标详情成功',
             data=goal_to_response(goal)
         )
 
-    except HTTPException:
+    except BusinessException:
         raise
     except Exception as e:
         logger.error(f"获取目标失败: {e}")
@@ -221,7 +222,7 @@ async def update_goal_api(goal_id: str, request: UpdateGoalRequest, current_user
         # 获取现有目标
         goal = await goal_dao.get_by_id(goal_id)
         if not goal:
-            raise HTTPException(status_code=404, detail="目标不存在")
+            raise DataNotFoundException("目标", goal_id)
 
         # 更新字段
         if request.name is not None:
@@ -245,7 +246,7 @@ async def update_goal_api(goal_id: str, request: UpdateGoalRequest, current_user
             data=goal_to_response(updated_goal)
         )
 
-    except HTTPException:
+    except BusinessException:
         raise
     except Exception as e:
         logger.error(f"更新目标失败: {e}")
@@ -264,7 +265,7 @@ async def delete_goal_api(id: str = Query(..., description="目标ID"), current_
         # 获取目标
         goal = await goal_dao.get_by_id(id)
         if not goal:
-            raise HTTPException(status_code=404, detail="目标不存在")
+            raise DataNotFoundException("目标", id)
 
         # 软删除
         await goal_dao.delete(goal)
@@ -275,7 +276,7 @@ async def delete_goal_api(id: str = Query(..., description="目标ID"), current_
             data={"id": id}
         )
 
-    except HTTPException:
+    except BusinessException:
         raise
     except Exception as e:
         logger.error(f"删除目标失败: {e}")

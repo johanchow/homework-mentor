@@ -9,6 +9,7 @@ from typing import Optional, Dict, Any
 from entity.user import User, create_user
 from dao.user_dao import user_dao
 from utils.jwt_utils import generate_token, verify_token
+from utils.exceptions import DataNotFoundException, ValidationException, BusinessException
 import logging
 
 logger = logging.getLogger(__name__)
@@ -65,23 +66,23 @@ async def register(request: RegisterRequest):
     try:
         mode = request.mode
         if mode != 'name' and mode != 'phone':
-            raise HTTPException(status_code=400, detail="无效的注册模式")
+            raise ValidationException("mode", "无效的注册模式")
 
         # 验证必需字段
         if mode == 'name':
             if not request.name or not request.password:
-                raise HTTPException(status_code=400, detail="用户名和密码不能为空")
+                raise ValidationException("credentials", "用户名和密码不能为空")
             # 验证密码长度
             if len(request.password) < 8:
-                raise HTTPException(status_code=400, detail="密码长度至少8位")
+                raise ValidationException("password", "密码长度至少8位")
             if await user_dao.get_by_name(request.name) is not None:
-                raise HTTPException(status_code=409, detail="用户名已被注册")
+                raise ValidationException("username", "用户名已被注册")
         else:
             if not request.phone or not request.verify_code:
-                raise HTTPException(status_code=400, detail="手机号和验证码不能为空")
+                raise ValidationException("credentials", "手机号和验证码不能为空")
             # 检查手机号是否已存在
             if await user_dao.get_by_phone(request.phone) is not None:
-                raise HTTPException(status_code=409, detail="手机号已被注册")
+                raise ValidationException("phone", "手机号已被注册")
 
         # 创建用户
         user = create_user(
@@ -104,7 +105,7 @@ async def register(request: RegisterRequest):
             }
         )
 
-    except HTTPException:
+    except BusinessException:
         raise
     except Exception as e:
         logger.exception(f"用户注册失败: {e}")
@@ -117,16 +118,16 @@ async def login(request: LoginRequest):
     try:
         mode = request.mode
         if mode != 'name' and mode != 'phone':
-            raise HTTPException(status_code=400, detail="无效的登录模式")
+            raise ValidationException("mode", "无效的登录模式")
 
         # 验证必需字段
         if mode == 'name':
             if not request.name or not request.password:
-                raise HTTPException(status_code=400, detail="用户名和密码不能为空")
+                raise ValidationException("credentials", "用户名和密码不能为空")
             user = await user_dao.authenticate_user_by_name(request.name, request.password)
         else:
             if not request.phone or not request.verify_code:
-                raise HTTPException(status_code=400, detail="手机号和验证码不能为空")
+                raise ValidationException("credentials", "手机号和验证码不能为空")
             user = await user_dao.authenticate_user_by_phone(request.phone, request.verify_code)
 
         if not user:
@@ -144,7 +145,7 @@ async def login(request: LoginRequest):
             }
         )
 
-    except HTTPException:
+    except BusinessException:
         raise
     except Exception as e:
         logger.error(f"用户登录失败: {e}")
@@ -158,14 +159,14 @@ async def get_user_profile(current_user_id: str = Depends(get_current_user_id)):
         user = await user_dao.get_by_id(current_user_id)
 
         if not user:
-            raise HTTPException(status_code=404, detail="用户不存在")
+            raise DataNotFoundException("用户", current_user_id)
 
         return UserResponse(
             message='获取用户信息成功',
             data=user.to_dict()
         )
 
-    except HTTPException:
+    except BusinessException:
         raise
     except Exception as e:
         logger.error(f"获取用户信息失败: {e}")

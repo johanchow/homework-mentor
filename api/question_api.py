@@ -12,6 +12,7 @@ from dao.question_dao import question_dao
 from dao.user_dao import user_dao
 from entity.question import Question, QuestionType, Subject, create_question
 from utils.jwt_utils import verify_token
+from utils.exceptions import DataNotFoundException, ValidationException, BusinessException
 
 logger = logging.getLogger(__name__)
 
@@ -161,7 +162,7 @@ async def create_question_api(request: QuestionCreateRequest, current_user_id: s
         # 验证创建人是否存在
         creator = await user_dao.get_by_id(request.creator_id)
         if not creator:
-            raise HTTPException(status_code=400, detail="创建人不存在")
+            raise DataNotFoundException("创建人", request.creator_id)
 
         # 创建问题
         question = create_question(
@@ -184,7 +185,7 @@ async def create_question_api(request: QuestionCreateRequest, current_user_id: s
             data=created_question.to_dict()
         )
 
-    except HTTPException:
+    except BusinessException:
         raise
     except Exception as e:
         logger.error(f"创建问题失败: {e}")
@@ -216,7 +217,7 @@ async def update_question_api(question_id: str, request: QuestionUpdateRequest, 
         # 获取现有问题
         question = await question_dao.get_by_id(question_id)
         if not question:
-            raise HTTPException(status_code=404, detail="问题不存在")
+            raise DataNotFoundException("问题", question_id)
 
         # 更新字段
         if request.subject is not None:
@@ -245,7 +246,7 @@ async def update_question_api(question_id: str, request: QuestionUpdateRequest, 
             data=updated_question.to_dict()
         )
 
-    except HTTPException:
+    except BusinessException:
         raise
     except Exception as e:
         logger.error(f"更新问题失败: {e}")
@@ -264,7 +265,7 @@ async def delete_question_api(question_id: str, current_user_id: str = Depends(g
         # 获取问题
         question = await question_dao.get_by_id(question_id)
         if not question:
-            raise HTTPException(status_code=404, detail="问题不存在")
+            raise DataNotFoundException("问题", question_id)
 
         # 软删除
         await question_dao.delete(question)
@@ -275,7 +276,7 @@ async def delete_question_api(question_id: str, current_user_id: str = Depends(g
             data={"question_id": question_id}
         )
 
-    except HTTPException:
+    except BusinessException:
         raise
     except Exception as e:
         logger.error(f"删除问题失败: {e}")
@@ -355,14 +356,14 @@ async def get_question_api(question_id: str, current_user_id: str = Depends(get_
     try:
         question = await question_dao.get_by_id(question_id)
         if not question:
-            raise HTTPException(status_code=404, detail="问题不存在")
+            raise DataNotFoundException("问题", question_id)
 
         return BaseResponse(
             message='获取问题详情成功',
             data=question.to_dict()
         )
 
-    except HTTPException:
+    except BusinessException:
         raise
     except Exception as e:
         logger.error(f"获取问题失败: {e}")
@@ -380,7 +381,7 @@ async def batch_create_questions_api(request: QuestionBatchCreateRequest, curren
     """
     try:
         if not request.questions:
-            raise HTTPException(status_code=400, detail="缺少问题列表")
+            raise ValidationException("questions", "缺少问题列表")
 
         questions = []
         errors = []
@@ -389,7 +390,7 @@ async def batch_create_questions_api(request: QuestionBatchCreateRequest, curren
             # 验证创建人是否存在
             creator = await user_dao.get_by_id(question_data.creator_id)
             if not creator:
-                raise HTTPException(status_code=400, detail=f"第{index+1}个问题创建人不存在: {question_data.creator_id}")
+                raise DataNotFoundException(f"第{index+1}个问题创建人", question_data.creator_id)
 
             # 创建问题
             question = create_question(
@@ -418,7 +419,7 @@ async def batch_create_questions_api(request: QuestionBatchCreateRequest, curren
             }
         )
 
-    except HTTPException:
+    except BusinessException:
         raise
     except Exception as e:
         logger.error(f"批量创建问题失败: {e}")

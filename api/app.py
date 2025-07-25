@@ -2,11 +2,12 @@
 FastAPI应用主文件
 """
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from config.settings import settings
 from utils.helpers import setup_logging
+from utils.exceptions import BusinessException
 
 # 导入所有路由
 from .exam_api import exam_router
@@ -73,6 +74,19 @@ async def not_found_handler(request, exc):
             "success": False,
             "error": "接口不存在",
             "message": "请检查API路径是否正确"
+        }
+    )
+
+
+@app.exception_handler(BusinessException)
+async def business_exception_handler(request: Request, exc: BusinessException):
+    """业务异常处理"""
+    return JSONResponse(
+        status_code=exc.code,
+        content={
+            "code": exc.code,
+            "message": exc.message,
+            "data": None
         }
     )
 

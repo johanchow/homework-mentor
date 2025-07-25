@@ -10,6 +10,7 @@ from entity.exam import Exam, ExamStatus, create_exam
 from dao.question_dao import question_dao
 from dao.exam_dao import exam_dao
 from utils.jwt_utils import verify_token
+from utils.exceptions import DataNotFoundException, ValidationException, BusinessException
 import json
 import logging
 
@@ -81,7 +82,7 @@ async def finish_exam(request: FinishExamRequest, current_user_id: str = Depends
         # 验证考试是否存在
         exam = await exam_dao.get_by_id(request.id)
         if not exam:
-            raise HTTPException(status_code=404, detail="考试不存在")
+            raise DataNotFoundException("考试", request.id)
 
         # 更新答案
         exam.answer_json = json.dumps(request.answer_json)
@@ -93,7 +94,7 @@ async def finish_exam(request: FinishExamRequest, current_user_id: str = Depends
             data=updated_exam.to_dict()
         )
 
-    except HTTPException:
+    except BusinessException:
         raise
 
     except Exception as e:
@@ -108,7 +109,7 @@ async def delete_exam(id: str = Query(..., description="考试ID"), current_user
         # 验证考试是否存在
         exam = await exam_dao.get_by_id(id)
         if not exam:
-            raise HTTPException(status_code=404, detail="考试不存在")
+            raise DataNotFoundException("考试", id)
 
         # 软删除
         exam.is_deleted = True
@@ -116,7 +117,7 @@ async def delete_exam(id: str = Query(..., description="考试ID"), current_user
 
         return ExamResponse(message='考试删除成功')
 
-    except HTTPException:
+    except BusinessException:
         raise
 
     except Exception as e:
@@ -131,7 +132,7 @@ async def get_exam(id: str = Query(..., description="考试ID"), current_user_id
         # 获取考试详细信息
         exam = await exam_dao.get_by_id(id)
         if not exam:
-            raise HTTPException(status_code=404, detail="考试不存在")
+            raise DataNotFoundException("考试", id)
 
         # 构建返回数据
         exam_data = exam.to_dict()
@@ -145,7 +146,7 @@ async def get_exam(id: str = Query(..., description="考试ID"), current_user_id
             data=exam_data
         )
 
-    except HTTPException:
+    except BusinessException:
         raise
 
     except Exception as e:

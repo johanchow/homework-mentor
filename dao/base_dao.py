@@ -34,15 +34,16 @@ class BaseDao(ABC):
     async def update(self, model: 'BaseModel'):
         try:
             session_maker = await self._get_session_maker()
+            print(model.model_dump())
             async with session_maker() as session:
                 # 添加更新时间
                 model.updated_at = datetime.now()
                 statement = (
                     update(model.__class__)
-                    .where(model.__class__.id == model.id, model.is_deleted == False)
-                    .values(**model.dict())
+                    .where(model.__class__.id == model.id)
+                    .values(**model.model_dump())
                 )
-                await session.exec(statement)
+                await session.execute(statement)
                 await session.commit()
                 return await self.get_by_id(model.id)
         except Exception as e:
@@ -58,7 +59,7 @@ class BaseDao(ABC):
                     .where(model.__class__.id == model.id)
                     .values(is_deleted=True, updated_at=datetime.now())
                 )
-                await session.exec(statement)
+                await session.execute(statement)
                 await session.commit()
                 return True
         except Exception as e:
@@ -95,8 +96,8 @@ class BaseDao(ABC):
             session_maker = await self._get_session_maker()
             async with session_maker() as session:
                 statement = select(Clazz).where(Clazz.id == id, Clazz.is_deleted == False)
-                result = await session.exec(statement)
-                return result.first()
+                result = await session.execute(statement)
+                return result.scalar_one_or_none()
         except Exception as e:
             logger.error(f"获取{Clazz.__name__}的id={id}失败: {e}")
             raise
@@ -190,8 +191,8 @@ class BaseDao(ABC):
             session_maker = await self._get_session_maker()
             async with session_maker() as session:
                 statement = select(Clazz).where(*filters).offset(skip).limit(limit)
-                result = await session.exec(statement)
-                return result.all()
+                result = await session.execute(statement)
+                return result.scalars().all()
         except Exception as e:
             logger.error(f"搜索失败: {e}")
             raise
@@ -224,8 +225,8 @@ class BaseDao(ABC):
             session_maker = await self._get_session_maker()
             async with session_maker() as session:
                 statement = select(func.count()).select_from(Clazz).where(*filters)
-                result = await session.exec(statement)
-                return result.one()
+                result = await session.execute(statement)
+                return result.scalar()
         except Exception as e:
             logger.error(f"统计数量失败: {e}")
             raise

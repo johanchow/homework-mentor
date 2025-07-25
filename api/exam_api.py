@@ -1,190 +1,205 @@
 """
-考试API模块 - 处理考试相关的HTTP请求
+考试API模块 - 处理考试相关的HTTP请求 - FastAPI异步版本
 """
 
-from flask import Blueprint, request, jsonify
+from fastapi import APIRouter, HTTPException, Depends, Query, Body, Request
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel
+from typing import Optional, List, Dict, Any
 from entity.exam import Exam, ExamStatus, create_exam
 from dao.question_dao import question_dao
 from dao.exam_dao import exam_dao
-from utils.jwt_utils import require_auth, get_current_user_id
+from utils.jwt_utils import verify_token
 import json
 import logging
 
 logger = logging.getLogger(__name__)
 
-exam_bp = Blueprint('exam', __name__, url_prefix='/exam')
+exam_router = APIRouter(prefix="/exam", tags=["考试管理"])
 
 
-@exam_bp.route('/create', methods=['POST'])
-@require_auth
-def create_exam_api():
+# 请求模型
+class CreateExamRequest(BaseModel):
+    goal_id: str
+    examinee_id: str
+    question_ids: str
+    plan_starttime: str
+    plan_duration: int
+
+
+class FinishExamRequest(BaseModel):
+    id: str
+    answer_json: Dict[str, Any]
+
+
+class ExamResponse(BaseModel):
+    code: int = 0
+    message: str
+    data: Optional[Dict[str, Any]] = None
+
+
+# 认证依赖
+async def get_current_user_id(request: Request) -> str:
+    """获取当前用户ID"""
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not auth_header.startswith('Bearer '):
+        raise HTTPException(status_code=401, detail="缺少认证token")
+    
+    token = auth_header.split(' ')[1]
+    payload = verify_token(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="无效或过期的token")
+    
+    return payload.get('user_id')
+
+
+@exam_router.post("/create", response_model=ExamResponse)
+async def create_exam_api(request: CreateExamRequest, current_user_id: str = Depends(get_current_user_id)):
     """创建考试"""
     try:
-        data = request.get_json()
-
-        # 验证必需字段
-        required_fields = ['goal_id', 'examinee_id', 'question_ids', 'plan_starttime', 'plan_duration']
-        for field in required_fields:
-            if not data.get(field):
-                return jsonify({'error': f'缺少必需字段: {field}'}), 400
-
         # 创建考试
-        exam = create_exam(**data)
+        exam = create_exam(**request.dict())
 
         # 保存到数据库
-        saved_exam = exam_dao.create(exam)
+        saved_exam = await exam_dao.create(exam)
         print(saved_exam.to_dict())
 
-        return jsonify({
-            'code': 0,
-            'message': '考试创建成功',
-            'data': saved_exam.to_dict()
-        }), 201
+        return ExamResponse(
+            message='考试创建成功',
+            data=saved_exam.to_dict()
+        )
 
     except Exception as e:
         logger.exception(f"创建考试失败: {e}")
-        return jsonify({'error': '创建考试失败，请稍后重试'}), 500
+        raise HTTPException(status_code=500, detail="创建考试失败，请稍后重试")
 
 
-@exam_bp.route('/finish', methods=['POST'])
-@require_auth
-def finish_exam():
+@exam_router.post("/finish", response_model=ExamResponse)
+async def finish_exam(request: FinishExamRequest, current_user_id: str = Depends(get_current_user_id)):
     """提交考试答卷（只能修改answer_json字段）"""
-    data = request.get_json()
-    # 验证必需字段
-    required_fields = ['id', 'answer_json']
-    for field in required_fields:
-        if not data.get(field):
-            return jsonify({'error': f'缺少必需字段: {field}'}), 400
-
-    exam_id = data.get('id')
-    answer_json = data.get('answer_json')
     try:
         # 验证考试是否存在
-        exam = exam_dao.get_by_id(exam_id)
+        exam = await exam_dao.get_by_id(request.id)
         if not exam:
-            return jsonify({'error': '考试不存在'}), 404
-
-        # 解析答卷数据
-        # try:
-        #     answer = Answer(**answer_json)
-        # except Exception as e:
-        #     logger.exception(f"答卷数据格式错误: {e}")
-        #     return jsonify({'error': f'答卷数据格式错误'}), 400
+            raise HTTPException(status_code=404, detail="考试不存在")
 
         # 更新答案
-        exam.answer_json = json.dumps(answer_json)
+        exam.answer_json = json.dumps(request.answer_json)
         exam.status = ExamStatus.completed
-        updated_exam = exam_dao.update(exam)
+        updated_exam = await exam_dao.update(exam)
 
-        return jsonify({
-            'code': 0,
-            'message': '答卷更新成功',
-            'exam': updated_exam.to_dict()
-        }), 200
+        return ExamResponse(
+            message='答卷更新成功',
+            data=updated_exam.to_dict()
+        )
+
+    except HTTPException:
+        raise
 
     except Exception as e:
         logger.exception(f"更新考试答卷失败: {e}")
-        return jsonify({'error': '更新答卷失败，请稍后重试'}), 500
+        raise HTTPException(status_code=500, detail="更新答卷失败，请稍后重试")
 
 
-@exam_bp.route('/delete', methods=['DELETE'])
-@require_auth
-def delete_exam():
+@exam_router.delete("/delete")
+async def delete_exam(id: str = Query(..., description="考试ID"), current_user_id: str = Depends(get_current_user_id)):
     """删除考试（软删除）"""
-    exam_id = request.args.get('id')
     try:
         # 验证考试是否存在
-        exam = exam_dao.get_by_id(exam_id)
+        exam = await exam_dao.get_by_id(id)
         if not exam:
-            return jsonify({'error': '考试不存在'}), 404
+            raise HTTPException(status_code=404, detail="考试不存在")
 
         # 软删除
         exam.is_deleted = True
-        exam_dao.update(exam)
+        await exam_dao.update(exam)
 
-        return jsonify({
-            'code': 0,
-            'message': '考试删除成功'
-        }), 200
+        return ExamResponse(message='考试删除成功')
+
+    except HTTPException:
+        raise
 
     except Exception as e:
         logger.exception(f"删除考试失败: {e}")
-        return jsonify({'error': '删除考试失败，请稍后重试'}), 500
+        raise HTTPException(status_code=500, detail="删除考试失败，请稍后重试")
 
 
-@exam_bp.route('/get', methods=['GET'])
-@require_auth
-def get_exam():
-    exam_id = request.args.get('id')  # 小于某时间
+@exam_router.get("/get")
+async def get_exam(id: str = Query(..., description="考试ID"), current_user_id: str = Depends(get_current_user_id)):
     """获取单个考试详情"""
     try:
         # 获取考试详细信息
-        exam = exam_dao.get_by_id(exam_id)
+        exam = await exam_dao.get_by_id(id)
         if not exam:
-            return jsonify({'error': '考试不存在'}), 404
+            raise HTTPException(status_code=404, detail="考试不存在")
 
         # 构建返回数据
         exam_data = exam.to_dict()
         if exam.question_ids and len(exam.question_ids) > 0:
             question_id_list = exam.question_ids.split(',')
-            exam_data['questions'] = [q.to_dict() for q in question_dao.search_by_kwargs({'id': {'$in': question_id_list}}) ]
+            questions = await question_dao.search_by_kwargs({'id': {'$in': question_id_list}})
+            exam_data['questions'] = [q.to_dict() for q in questions]
 
-        return jsonify({
-            'code': 0,
-            'message': '获取考试详情成功',
-            'data': exam_data
-        }), 200
+        return ExamResponse(
+            message='获取考试详情成功',
+            data=exam_data
+        )
+
+    except HTTPException:
+        raise
 
     except Exception as e:
         logger.exception(f"获取考试详情失败: {e}")
-        return jsonify({'error': '获取考试详情失败，请稍后重试'}), 500
+        raise HTTPException(status_code=500, detail="获取考试详情失败，请稍后重试")
 
 
-@exam_bp.route('/list', methods=['GET'])
-@require_auth
-def list_exams():
+@exam_router.get("/list")
+async def list_exams(
+    plan_starttime_from: Optional[str] = Query(None, description="开始时间（大于等于）"),
+    plan_starttime_to: Optional[str] = Query(None, description="结束时间（小于等于）"),
+    page: int = Query(1, description="页码"),
+    page_size: int = Query(10, description="每页数量"),
+    current_user_id: str = Depends(get_current_user_id)
+):
     """获取考试列表"""
     try:
-        # 获取查询参数
-        plan_starttime_from = request.args.get('plan_starttime_from')  # 大于某时间
-        plan_starttime_to = request.args.get('plan_starttime_to')  # 小于某时间
-        page = int(request.args.get('page', 1))
-        size = int(request.args.get('size', 10))
-
         # 计算分页参数
-        skip = (page - 1) * size
-        limit = size
+        skip = (page - 1) * page_size
+        limit = page_size
 
         # 构建查询条件
-        kwargs = {'is_deleted': False, 'examinee_id': get_current_user_id()}
+        kwargs = {'is_deleted': False, 'examinee_id': current_user_id}
         
         # 添加时间过滤条件
-        if plan_starttime_from:
+        if plan_starttime_from and plan_starttime_to:
+            # 如果同时有开始和结束时间，使用between
+            kwargs['plan_starttime'] = {"$between": [plan_starttime_from, plan_starttime_to]}
+        elif plan_starttime_from:
+            # 只有开始时间
             kwargs['plan_starttime'] = {"$gte": plan_starttime_from}
-        if plan_starttime_to:
+        elif plan_starttime_to:
+            # 只有结束时间
             kwargs['plan_starttime'] = {"$lte": plan_starttime_to}
 
         # 查询考试列表
-        exams = exam_dao.search_by_kwargs(kwargs, skip, limit)
-        total = exam_dao.count_by_kwargs(kwargs)
+        exams = await exam_dao.search_by_kwargs(kwargs, skip, limit)
+        total = await exam_dao.count_by_kwargs(kwargs)
 
         # 转换为字典格式
         exam_list = [exam.to_dict() for exam in exams]
 
-        return jsonify({
-            'code': 0,
-            'message': '获取考试列表成功',
-            'data': {
+        return ExamResponse(
+            message='获取考试列表成功',
+            data={
                 'exams': exam_list,
                 'total': total,
                 'page': page,
-                'size': size,
-                'pages': (total + size - 1) // size
+                'page_size': page_size,
+                'pages': (total + page_size - 1) // page_size
             }
-        }), 200
+        )
 
     except Exception as e:
         logger.exception(f"获取考试列表失败: {e}")
-        return jsonify({'error': '获取考试列表失败，请稍后重试'}), 500
+        raise HTTPException(status_code=500, detail="获取考试列表失败，请稍后重试")
 

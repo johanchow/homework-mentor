@@ -31,8 +31,8 @@ class UserDAO(BaseDao):
             session_maker = await self._get_session_maker()
             async with session_maker() as session:
                 statement = select(User).where(User.name == name, User.is_deleted == False)
-                result = await session.exec(statement)
-                return result.first()
+                result = await session.execute(statement)
+                return result.scalar_one_or_none()
         except Exception as e:
             logger.error(f"根据用户名获取用户失败 (name: {name}): {e}")
             raise
@@ -43,8 +43,8 @@ class UserDAO(BaseDao):
             session_maker = await self._get_session_maker()
             async with session_maker() as session:
                 statement = select(User).where(User.phone == phone, User.is_deleted == False)
-                result = await session.exec(statement)
-                return result.first()
+                result = await session.execute(statement)
+                return result.scalar_one_or_none()
         except Exception as e:
             logger.error(f"根据手机号获取用户失败 (phone: {phone}): {e}")
             raise

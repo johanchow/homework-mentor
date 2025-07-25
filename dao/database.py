@@ -31,14 +31,16 @@ async def create_async_database_engine():
     database_url = get_database_url()
     
     # 转换为异步URL
-    if database_url.startswith("sqlite://"):
-        database_url = database_url.replace("sqlite://", "sqlite+aiosqlite://", 1)
-    elif database_url.startswith("mysql://"):
-        database_url = database_url.replace("mysql://", "mysql+aiomysql://", 1)
-    elif database_url.startswith("postgresql://"):
-        database_url = database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    # if database_url.startswith("sqlite://"):
+    #     database_url = database_url.replace("sqlite://", "sqlite+aiosqlite://", 1)
+    # elif database_url.startswith("mysql://"):
+    #     database_url = database_url.replace("mysql://", "mysql+aiomysql://", 1)
+    # elif database_url.startswith("postgresql://"):
+    #     database_url = database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
     
     logger.info(f"连接异步数据库: {database_url}")
+    database_url = "mysql+aiomysql://root:Abc%40123456@gz-cdb-bebkypyn.sql.tencentcdb.com:29750/homework-mentor"
+    print(f"连接异步数据库: {database_url}")
     
     async_engine = create_async_engine(
         database_url,

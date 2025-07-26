@@ -13,7 +13,7 @@ from utils.helpers import random_uuid
 from entity.message import Message, MessageRole
 from entity.user import User
 from utils.transformer import iso_to_mysql_datetime, mysql_datetime_to_iso
-from service.extract_file_word import extract_text_from_file_url
+# from service.extract_file_word import extract_text_from_file_url
 
 logger = logging.getLogger(__name__)
 
@@ -133,18 +133,18 @@ class Question(BaseModel, table=True):
                 result[field] = value
         return result
 
-    def refresh_material(self):
-        """刷新材料"""
-        if self.type != QuestionType.reading:
-            return
-        material = ''
-        for image in self.images.split(',') if self.images else []:
-            image_text = extract_text_from_file_url(image)
-            material += image_text
-        for attachment in self.attachments.split(',') if self.attachments else []:
-            attachment_text = extract_text_from_file_url(attachment)
-            material += attachment_text
-        self.material = material
+    # def refresh_material(self):
+    #     """刷新材料"""
+    #     if self.type != QuestionType.reading:
+    #         return
+    #     material = ''
+    #     for image in self.images.split(',') if self.images else []:
+    #         image_text = extract_text_from_file_url(image)
+    #         material += image_text
+    #     for attachment in self.attachments.split(',') if self.attachments else []:
+    #         attachment_text = extract_text_from_file_url(attachment)
+    #         material += attachment_text
+    #     self.material = material
 
     def get_images_list(self) -> List[str]:
         """获取图片列表"""

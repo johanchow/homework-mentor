@@ -14,7 +14,7 @@ from entity.session import create_session, TopicType
 from dao.session_dao import session_dao
 from entity.message import create_message, MessageRole, MessageType
 from entity.question import create_question
-from utils.jwt_utils import verify_token
+from utils.jwt_utils import verify_token, get_current_user_id
 
 logger = logging.getLogger(__name__)
 
@@ -44,29 +44,11 @@ class AnalyzeQuestionRequest(BaseModel):
     question: Dict[str, Any]
 
 
-# 认证依赖
-async def get_current_user_id(request: Request) -> str:
-    """获取当前用户ID"""
-    auth_header = request.headers.get('Authorization')
-    if not auth_header or not auth_header.startswith('Bearer '):
-        raise HTTPException(status_code=401, detail="缺少认证token")
-    
-    token = auth_header.split(' ')[1]
-    payload = verify_token(token)
-    if not payload:
-        raise HTTPException(status_code=401, detail="无效或过期的token")
-    
-    return payload.get('user_id')
-
-logger = logging.getLogger(__name__)
-
-
-
 @ai_router.post("/generate-questions", response_model=BaseResponse)
 async def generate_questions(request: GenerateQuestionsRequest, current_user_id: str = Depends(get_current_user_id)):
     """创建AI"""
     try:
-        if not session_id:
+        if not request.session_id:
             session = create_session(TopicType.RAISE, '')
         else:
             session = await session_dao.get_full_by_id(request.session_id)

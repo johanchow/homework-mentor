@@ -1,12 +1,12 @@
 """
-JWT工具模块 - 处理token的生成和验证
+JWT工具模块 - 处理token的生成和验证 - FastAPI版本
 """
 
 import jwt
 import datetime
 from typing import Optional, Dict, Any
-from functools import wraps
-from flask import request, jsonify, current_app
+from fastapi import Request
+from utils.exceptions import AuthenticationException
 import logging
 
 logger = logging.getLogger(__name__)
@@ -49,7 +49,7 @@ def verify_token(token: str) -> Optional[Dict[str, Any]]:
         return None
 
 
-def get_token_from_header() -> Optional[str]:
+def get_token_from_header(request: Request) -> Optional[str]:
     """从请求头中获取token"""
     auth_header = request.headers.get('Authorization')
     if auth_header and auth_header.startswith('Bearer '):
@@ -57,29 +57,34 @@ def get_token_from_header() -> Optional[str]:
     return None
 
 
-def require_auth(f):
-    """认证装饰器"""
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        token = get_token_from_header()
-
-        if not token:
-            return jsonify({'error': '缺少认证token'}), 401
-
-        payload = verify_token(token)
-        if not payload:
-            return jsonify({'error': '无效或过期的token'}), 401
-
-        # 将用户信息添加到请求上下文
-        request.user_id = payload.get('user_id')
-        request.user_email = payload.get('email')
-
-        return f(*args, **kwargs)
-
-    return decorated_function
+async def get_current_user_id(request: Request) -> str:
+    """获取当前用户ID - FastAPI依赖注入函数"""
+    token = get_token_from_header(request)
+    
+    if not token:
+        raise AuthenticationException("缺少认证token")
+    
+    payload = verify_token(token)
+    if not payload:
+        raise AuthenticationException("无效或过期的token")
+    
+    return payload.get('user_id')
 
 
-def get_current_user_id() -> Optional[str]:
-    """获取当前用户ID"""
-    return getattr(request, 'user_id', None)
+async def get_current_user_payload(request: Request) -> Dict[str, Any]:
+    """获取当前用户完整信息 - FastAPI依赖注入函数"""
+    token = get_token_from_header(request)
+    
+    if not token:
+        raise AuthenticationException("缺少认证token")
+    
+    payload = verify_token(token)
+    if not payload:
+        raise AuthenticationException("无效或过期的token")
+    
+    return payload
+
+
+# 为了向后兼容，保留原有的函数名
+require_auth = get_current_user_id
 

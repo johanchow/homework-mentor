@@ -11,7 +11,7 @@ import logging
 from dao.question_dao import question_dao
 from dao.user_dao import user_dao
 from entity.question import Question, QuestionType, Subject, create_question
-from utils.jwt_utils import verify_token
+from utils.jwt_utils import verify_token, get_current_user_id
 from utils.exceptions import DataNotFoundException, ValidationException, BusinessException
 
 logger = logging.getLogger(__name__)
@@ -24,51 +24,6 @@ class BaseResponse(BaseModel):
     code: int = 0
     message: str
     data: Optional[Dict[str, Any]] = None
-
-
-# 请求模型
-class QuestionCreateRequest(BaseModel):
-    """创建问题的请求模型"""
-    subject: Subject
-    type: QuestionType
-    title: str
-    creator_id: str
-    options: Optional[List[str]] = None
-    images: Optional[List[str]] = None
-    audios: Optional[List[str]] = None
-    videos: Optional[List[str]] = None
-
-
-class QuestionUpdateRequest(BaseModel):
-    """更新问题的请求模型"""
-    subject: Optional[Subject] = None
-    type: Optional[QuestionType] = None
-    title: Optional[str] = None
-    options: Optional[List[str]] = None
-    images: Optional[List[str]] = None
-    audios: Optional[List[str]] = None
-    videos: Optional[List[str]] = None
-    is_active: Optional[bool] = None
-
-
-class QuestionBatchCreateRequest(BaseModel):
-    """批量创建问题的请求模型"""
-    questions: List[QuestionCreateRequest]
-
-
-# 认证依赖
-async def get_current_user_id(request: Request) -> str:
-    """获取当前用户ID"""
-    auth_header = request.headers.get('Authorization')
-    if not auth_header or not auth_header.startswith('Bearer '):
-        raise HTTPException(status_code=401, detail="缺少认证token")
-    
-    token = auth_header.split(' ')[1]
-    payload = verify_token(token)
-    if not payload:
-        raise HTTPException(status_code=401, detail="无效或过期的token")
-    
-    return payload.get('user_id')
 
 
 # 请求模型

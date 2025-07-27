@@ -11,7 +11,7 @@ from datetime import datetime
 from entity.goal import Goal, GoalStatus, Subject, create_goal
 from dao.goal_dao import goal_dao
 from dao.user_dao import user_dao
-from utils.jwt_utils import verify_token
+from utils.jwt_utils import verify_token, get_current_user_id
 from utils.exceptions import DataNotFoundException, ValidationException, BusinessException
 
 logger = logging.getLogger(__name__)
@@ -40,42 +40,6 @@ class UpdateGoalRequest(BaseModel):
     subject: Optional[Subject] = None
     status: Optional[GoalStatus] = None
     ai_prompt: Optional[str] = None
-
-
-# 认证依赖
-async def get_current_user_id(request: Request) -> str:
-    """获取当前用户ID"""
-    auth_header = request.headers.get('Authorization')
-    if not auth_header or not auth_header.startswith('Bearer '):
-        raise HTTPException(status_code=401, detail="缺少认证token")
-    
-    token = auth_header.split(' ')[1]
-    payload = verify_token(token)
-    if not payload:
-        raise HTTPException(status_code=401, detail="无效或过期的token")
-    
-    return payload.get('user_id')
-
-
-def goal_to_response(goal: Goal) -> dict:
-    """将Goal实体转换为响应格式"""
-    return {
-        "id": goal.id,
-        "name": goal.name,
-        "subject": goal.subject,
-        "status": goal.status,
-        "ai_prompt": goal.ai_prompt,
-        "creator_id": goal.creator_id,
-        "created_at": goal.created_at.isoformat(),
-        "updated_at": goal.updated_at.isoformat(),
-        "is_deleted": goal.is_deleted
-    }
-
-
-async def validate_creator_exists(creator_id: str) -> bool:
-    """验证创建人是否存在"""
-    creator = await user_dao.get_by_id(creator_id)
-    return creator is not None
 
 
 # API接口
@@ -113,7 +77,7 @@ async def create_goal_api(request: CreateGoalRequest, current_user_id: str = Dep
         logger.info(f"创建目标成功: {created_goal.id}")
         return BaseResponse(
             message='目标创建成功',
-            data=goal_to_response(created_goal)
+            data=created_goal.to_dict()
         )
 
     except HTTPException:
@@ -161,7 +125,7 @@ async def list_goals_api(
         total = await goal_dao.count_by_kwargs(filters)
 
         # 转换为响应格式
-        goal_responses = [goal_to_response(g) for g in goals]
+        goal_responses = [g.to_dict() for g in goals]
 
         return BaseResponse(
             message='获取目标列表成功',
@@ -194,7 +158,7 @@ async def get_goal_api(id: str = Query(..., description="目标ID"), current_use
 
         return BaseResponse(
             message='获取目标详情成功',
-            data=goal_to_response(goal)
+            data=goal.to_dict()
         )
 
     except BusinessException:
@@ -243,7 +207,7 @@ async def update_goal_api(goal_id: str, request: UpdateGoalRequest, current_user
         logger.info(f"更新目标成功: {goal_id}")
         return BaseResponse(
             message='目标更新成功',
-            data=goal_to_response(updated_goal)
+            data=updated_goal.to_dict()
         )
 
     except BusinessException:

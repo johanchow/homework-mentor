@@ -9,7 +9,7 @@ from typing import Optional, List, Dict, Any
 from entity.exam import Exam, ExamStatus, create_exam
 from dao.question_dao import question_dao
 from dao.exam_dao import exam_dao
-from utils.jwt_utils import verify_token
+from utils.jwt_utils import verify_token, get_current_user_id
 from utils.exceptions import DataNotFoundException, ValidationException, BusinessException
 import json
 import logging
@@ -39,19 +39,7 @@ class ExamResponse(BaseModel):
     data: Optional[Dict[str, Any]] = None
 
 
-# 认证依赖
-async def get_current_user_id(request: Request) -> str:
-    """获取当前用户ID"""
-    auth_header = request.headers.get('Authorization')
-    if not auth_header or not auth_header.startswith('Bearer '):
-        raise HTTPException(status_code=401, detail="缺少认证token")
-    
-    token = auth_header.split(' ')[1]
-    payload = verify_token(token)
-    if not payload:
-        raise HTTPException(status_code=401, detail="无效或过期的token")
-    
-    return payload.get('user_id')
+
 
 
 @exam_router.post("/create", response_model=ExamResponse)

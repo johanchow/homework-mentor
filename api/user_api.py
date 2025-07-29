@@ -117,7 +117,7 @@ async def login(request: LoginRequest):
 
         if not user:
             error_message = '用户名或密码错误' if mode == 'name' else '手机号或验证码错误'
-            raise HTTPException(status_code=401, detail=error_message)
+            raise AuthenticationException(error_message)
 
         # 生成token
         token = generate_token(user.id, user.name)

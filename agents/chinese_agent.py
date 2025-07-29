@@ -14,6 +14,8 @@ from datetime import datetime
 from utils.llm import LLM
 from entity.session import Session
 from entity.message import Message, MessageRole, create_message
+from entity.question import Question
+from utils.transformer import markdown_to_json
 
 class ChineseTeacherAgent(BaseAgent):
     """中文老师Agent - 负责中文教学指导和答疑"""
@@ -37,24 +39,35 @@ class ChineseTeacherAgent(BaseAgent):
         ''')
         self.ask_prompt = ''
 
-    def process_guide(self, session: Session, latest_message: Message) -> str:
+    async def process_guide(self, session: Session, latest_message: Message) -> str:
         """处理用户查询 - 使用AgentExecutor"""
         prompt_message = Message(role=MessageRole.SYSTEM, content="你是一位经验丰富的中文老师，擅长语文教学和指导。")
         question_message = session.question.to_message()
         history_messages = session.get_messages()
         all_messages = [prompt_message] + [question_message] + history_messages + [latest_message]
         llm_chat_messages = [msg.to_llm_message() for msg in all_messages]
-        result = self.llm.invoke(llm_chat_messages)
+        result = await self.llm.ainvoke(llm_chat_messages)
         print('get ask result', result.content)
         return result.content
 
-    def _process_raise(self, session: Session, latest_message: Message) -> str:
+    async def process_raise(self, session: Session, latest_message: Message) -> List['Question']:
+        """出题"""
+        content = await self._process_raise(session, latest_message)
+        try:
+            question_dicts = json.loads(markdown_to_json(content))
+        except Exception as e:
+            print('json.loads generate questions result error: ', e)
+            return []
+        questions = [Question.from_dict(question) for question in question_dicts]
+        return questions
+
+    async def _process_raise(self, session: Session, latest_message: Message) -> str:
         history_messages = session.get_messages()
         system_raise_prompt = self.get_system_raise_prompt(session, latest_message)
         all_messages = [system_raise_prompt] + history_messages + [latest_message]
         llm_chat_messages = [msg.to_llm_message() for msg in all_messages]
         print('send llm chat messages: ', '\n'.join([msg.content for msg in all_messages]))
-        result = self.llm.invoke(llm_chat_messages)
+        result = await self.llm.ainvoke(llm_chat_messages)
         print('generate result', result.content)
         return result.content
 

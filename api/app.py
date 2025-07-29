@@ -15,6 +15,7 @@ from .user_api import user_router
 from .question_api import question_router
 from .goal_api import goal_router
 from .ai_api import ai_router
+from .session_api import session_router
 
 # 创建FastAPI应用
 app = FastAPI(
@@ -38,6 +39,7 @@ app.include_router(user_router, prefix="/api")
 app.include_router(question_router, prefix="/api")
 app.include_router(goal_router, prefix="/api")
 app.include_router(ai_router, prefix="/api")
+app.include_router(session_router, prefix="/api")
 
 # 设置日志
 logger = setup_logging()

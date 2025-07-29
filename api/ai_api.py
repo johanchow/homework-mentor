@@ -12,9 +12,11 @@ from agents.agent_graph import agent_graph
 from agents.parse_image_agent import ParseImageAgent
 from entity.session import create_session, TopicType
 from dao.session_dao import session_dao
+from dao.question_dao import question_dao
 from entity.message import create_message, MessageRole, MessageType
 from entity.question import create_question
-from utils.jwt_utils import verify_token, get_current_user_id
+from utils.exceptions import DataNotFoundException, ValidationException
+from utils.jwt_utils import get_current_user_id
 
 logger = logging.getLogger(__name__)
 
@@ -35,13 +37,53 @@ class GenerateQuestionsRequest(BaseModel):
     count: int
     session_id: Optional[str] = None
 
-
 class ParseQuestionsRequest(BaseModel):
     image_urls: List[str]
 
-
 class AnalyzeQuestionRequest(BaseModel):
     question: Dict[str, Any]
+
+class GuideQuestionRequest(BaseModel):
+    question_id: str
+    new_message: str
+    session_id: Optional[str] = None
+
+
+@ai_router.post("/guide-question", response_model=BaseResponse)
+async def guide_question(request: GuideQuestionRequest, current_user_id: str = Depends(get_current_user_id)):
+    """引导用户分析题目"""
+    try:
+        question = await question_dao.get_by_id(request.question_id)
+        if not question:
+            raise DataNotFoundException(data_type="question", data_id=request.question_id)
+        
+        if not request.session_id:
+            session = create_session(TopicType.GUIDE, question)
+        else:
+            session = await session_dao.get_by_id(request.session_id)
+            if not session:
+                session = create_session(TopicType.GUIDE, question)
+
+        state = await agent_graph.ainvoke({
+            "session": session,
+            "latest_message": create_message(
+                role=MessageRole.USER,
+                content=request.new_message,
+            )
+        })
+        ai_resp_message = session.get_messages()[-1].content
+        return BaseResponse(
+            message="success",
+            data={
+                "ai_message": ai_resp_message
+            }
+        )
+        
+    except DataNotFoundException:
+        raise
+    except Exception as e:
+        logger.exception(f"引导题目分析失败: {e}")
+        raise HTTPException(status_code=500, detail=f"引导题目分析失败: {str(e)}")
 
 
 @ai_router.post("/generate-questions", response_model=BaseResponse)
@@ -63,7 +105,7 @@ async def generate_questions(request: GenerateQuestionsRequest, current_user_id:
             content=f"{request.ai_prompt}\n请根据提示生成{request.count}个题目",
             message_type=MessageType.TEXT
         )
-        state = agent_graph.invoke({
+        state = await agent_graph.ainvoke({
             "session": session,
             "latest_message": new_message,
         }, config={"configurable": {"thread_id": request.session_id}})
@@ -99,7 +141,7 @@ async def parse_questions_from_images(request: ParseQuestionsRequest, current_us
     try:
         logger.info(f'开始从图片中提取题目，图片数量: {len(request.image_urls)}')
         if not request.image_urls:
-            raise HTTPException(status_code=400, detail="images is required")
+            raise ValidationException("image_urls", "图片列表不能为空")
         
         # 调用AI解析题目
         parse_image_agent = ParseImageAgent()

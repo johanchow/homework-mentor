@@ -69,13 +69,13 @@ class BaseAgent(ABC):
         )
 
     @abstractmethod
-    def process_guide(self, session: Session, latest_message: Message) -> str:
+    async def process_guide(self, session: Session, latest_message: Message) -> str:
         """处理用户查询"""
         pass
 
-    def process_raise(self, session: Session, latest_message: Message) -> List['Question']:
+    async def process_raise(self, session: Session, latest_message: Message) -> List['Question']:
         """出题"""
-        content = self._process_raise(session, latest_message)
+        content = await self._process_raise(session, latest_message)
         try:
             question_dicts = json.loads(markdown_to_json(content))
         except Exception as e:
@@ -130,7 +130,7 @@ class BaseAgent(ABC):
         return create_message(role=MessageRole.SYSTEM, content=system_raise_prompt)
 
     @abstractmethod
-    def _process_raise(self, session: Session, latest_message: Message) -> str:
+    async def _process_raise(self, session: Session, latest_message: Message) -> str:
         pass
 
     @abstractmethod

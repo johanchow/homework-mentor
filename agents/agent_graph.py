@@ -23,7 +23,7 @@ class AgentState(TypedDict):
 
 def decide_route(state: AgentState):
     if state["session"].topic == TopicType.GUIDE:
-        subject = state["session"].question.subject
+        subject = state["session"].question.subject.value
         return f"{subject}-topic-guide"
     elif state["session"].topic == TopicType.RAISE:
         subject = state["session"]._goal.subject

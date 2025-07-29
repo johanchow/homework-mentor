@@ -36,7 +36,7 @@ class Message(BaseModel):
     content: Union[str, List[Dict[str, Any]]] = Field(..., description="消息内容")
 
     # 消息类型
-    message_type: MessageType = Field(..., description="消息类型")
+    message_type: MessageType = Field(default=MessageType.TEXT, description="消息类型")
 
     # 时间戳
     timestamp: datetime = Field(default_factory=datetime.now, description="时间戳")

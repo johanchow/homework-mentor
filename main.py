@@ -57,14 +57,24 @@ class StartupChecker:
         """检查环境变量"""
         self.logger.info("🔍 检查环境变量...")
         
+        # 确保环境变量已加载
+        from utils.env import EnvUtils
+        EnvUtils()
+        
+        # 检查.env文件是否存在，如果不存在则创建示例文件
+        if not os.path.exists('.env'):
+            self.log_warning(".env 文件不存在，正在创建示例文件...")
+            self._create_env_example()
+            self.log_warning("请编辑 .env 文件，添加你的 API 密钥")
+        
         # 必需的环境变量
         required_vars = []
         
         # 可选但重要的环境变量
         important_vars = [
-            "OPENAI_API_KEY",
-            "DASHSCOPE_API_KEY",
-            "DATABASE_URL"
+            ("OPENAI_API_KEY", settings.OPENAI_API_KEY),
+            ("DASHSCOPE_API_KEY", settings.DASHSCOPE_API_KEY),
+            ("DATABASE_URL", settings.DATABASE_URL)
         ]
         
         # 检查必需变量
@@ -73,11 +83,11 @@ class StartupChecker:
                 self.log_error(f"缺少必需环境变量: {var}")
                 
         # 检查重要变量
-        for var in important_vars:
-            if not os.getenv(var):
-                self.log_warning(f"缺少重要环境变量: {var}")
+        for var_name, var_value in important_vars:
+            if not var_value:
+                self.log_warning(f"缺少重要环境变量: {var_name}")
             else:
-                self.log_success(f"环境变量已设置: {var}")
+                self.log_success(f"环境变量已设置: {var_name}")
                 
         return len([var for var in required_vars if not os.getenv(var)]) == 0
     

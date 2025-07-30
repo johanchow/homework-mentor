@@ -27,9 +27,9 @@ class SessionDAO(BaseDao):
             会话对象
         """
         session = await self._get_by_id(Session, id)
-        # 手动初始化 pydantic private attr
-        if session.__pydantic_private__ is None:
-            session.__pydantic_private__ = type(session)().__pydantic_private__
+        # # 手动初始化 pydantic private attr
+        # if session.__pydantic_private__ is None:
+        #     session.__pydantic_private__ = type(session)().__pydantic_private__
         return session
 
     async def search_by_kwargs(self, kwargs: dict, skip: int = 0, limit: int = 100) -> List[Session]:

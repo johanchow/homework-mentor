@@ -59,9 +59,9 @@ class Session(BaseModel, table=True):
         Args:
             message: 要添加的消息
         """
-        messages_list = self.get_messages_list()
-        messages_list.append(message.to_dict())
-        self.messages = json.dumps(messages_list, ensure_ascii=False)
+        messages_dict_list = json.loads(self.messages) if self.messages else []
+        messages_dict_list.append(message.to_dict())
+        self.messages = json.dumps(messages_dict_list, ensure_ascii=False)
         self.updated_at = datetime.now()
 
     def get_messages(self) -> List[Message]:
@@ -71,36 +71,19 @@ class Session(BaseModel, table=True):
             return [Message.from_dict(msg) for msg in messages]
         return []
 
-    def get_messages_list(self) -> List[Dict[str, Any]]:
-        """获取消息列表"""
-        messages = self.get_messages()
-        return [msg.to_dict() for msg in messages]
-
     def clear_messages(self) -> None:
         """清空所有消息"""
         self.messages = json.dumps([], ensure_ascii=False)
         self.updated_at = datetime.now()
 
-    def get_messages_for_llm(self, limit: Optional[int] = None) -> List[Dict[str, Any]]:
-        """
-        获取用于LLM的消息格式
-
-        Args:
-            limit: 限制消息数量
-
-        Returns:
-            LLM格式的消息列表
-        """
-        messages = self.get_messages(limit=limit)
-        return [msg.to_llm_message() for msg in messages]
-
     def to_dict(self) -> Dict[str, Any]:
         """转换为字典格式"""
+        messages_dict_list = json.loads(self.messages) if self.messages else []
         return {
             "id": self.id,
             "topic": self.topic,
-            "topic_id": self.topic_id,
-            "messages": self.get_messages_list(),
+            "question_id": self.question_id,
+            "messages": messages_dict_list,
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat(),
             "is_deleted": self.is_deleted
@@ -113,7 +96,6 @@ class Session(BaseModel, table=True):
         return cls(
             id=data.get("id"),
             topic=data.get("topic"),
-            topic_id=data.get("topic_id"),
             messages=json.dumps(messages, ensure_ascii=False) if messages else None,
             created_at=datetime.fromisoformat(data["created_at"]) if data.get("created_at") else None,
             updated_at=datetime.fromisoformat(data["updated_at"]) if data.get("updated_at") else None,
@@ -122,23 +104,26 @@ class Session(BaseModel, table=True):
 
     def __str__(self) -> str:
         """字符串表示"""
-        return f"Session(id={self.id}, topic={self.topic}, topic_id={self.topic_id})"
+        return f"Session(id={self.id}, topic={self.topic}, question_id={self.question_id})"
 
     def __repr__(self) -> str:
         """详细字符串表示"""
-        return f"Session(id={self.id}, topic={self.topic}, topic_id={self.topic_id}"
+        return f"Session(id={self.id}, topic={self.topic}, question_id={self.question_id})"
 
 
 # 创建会话的工厂函数
 def create_session(
     topic: TopicType,
-    topic_id: str,
+    may_question: Optional[Question | str] = None,
     messages: Optional[List[Message]] = None,
 ) -> Session:
     """创建会话实例的工厂函数"""
+    question_id = may_question.id if isinstance(may_question, Question) else may_question
+    question = may_question if isinstance(may_question, Question) else None
     session = Session(
         topic=topic,
-        topic_id=topic_id,
+        question_id=question_id,
+        question=question,
     )
     
     if messages:
@@ -153,7 +138,7 @@ if __name__ == "__main__":
     # 创建一个会话示例
     session = create_session(
         topic=TopicType.GUIDE,
-        topic_id="question123",
+        question=Question(id="question123"),
     )
 
     # 添加一些消息
@@ -161,7 +146,5 @@ if __name__ == "__main__":
     session.add_assistant_message("你好！请告诉我你的问题，我会尽力帮助你。")
 
     print(session)
-    print(f"主题类型: {session.topic}")
-    print(f"主题ID: {session.topic_id}")
     print(f"消息数量: {session.get_message_count()}")
     print(f"最后消息: {session.get_last_message()}")

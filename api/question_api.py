@@ -300,8 +300,8 @@ async def list_questions_api(
         raise HTTPException(status_code=500, detail=f"获取问题列表失败: {str(e)}")
 
 
-@question_router.get("/{question_id}", response_model=BaseResponse)
-async def get_question_api(question_id: str, current_user_id: str = Depends(get_current_user_id)):
+@question_router.get("/get", response_model=BaseResponse)
+async def get_question_api(id: str = Query(..., description="问题ID"), current_user_id: str = Depends(get_current_user_id)):
     """
     根据ID获取问题详情
 
@@ -309,9 +309,9 @@ async def get_question_api(question_id: str, current_user_id: str = Depends(get_
     - question_id: 问题ID
     """
     try:
-        question = await question_dao.get_by_id(question_id)
+        question = await question_dao.get_by_id(id)
         if not question:
-            raise DataNotFoundException("问题", question_id)
+            raise DataNotFoundException("问题", id)
 
         return BaseResponse(
             message='获取问题详情成功',

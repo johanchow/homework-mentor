@@ -42,6 +42,7 @@ async def call_chinese_guide(state: AgentState):
     chinese_agent = get_chinese_agent()
     session = state["session"]
     resp_content = await chinese_agent.process_guide(state["session"], state["latest_message"])
+    session.add_message(Message(role=MessageRole.USER, content=state["latest_message"].content))
     session.add_message(Message(role=MessageRole.ASSISTANT, content=resp_content))
     return {"session": session}
 
@@ -69,6 +70,7 @@ def create_workflow() -> CompiledGraph:
 
     # Define the (single) node in the graph
     graph.add_node("chinese-topic-guide", call_chinese_guide)
+    graph.add_node("math-topic-guide", call_chinese_guide)
     graph.add_node("chinese-topic-raise", call_chinese_raiser)
     graph.add_node("english-topic-import", call_english_import)
     graph.add_node("gossip", call_gossip_agent)

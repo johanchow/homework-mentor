@@ -57,12 +57,17 @@ async def guide_question(request: GuideQuestionRequest, current_user_id: str = D
         if not question:
             raise DataNotFoundException(data_type="question", data_id=request.question_id)
         
+        is_new_session = False
         if not request.session_id:
             session = create_session(TopicType.GUIDE, question)
+            is_new_session = True
         else:
             session = await session_dao.get_by_id(request.session_id)
             if not session:
                 session = create_session(TopicType.GUIDE, question)
+                is_new_session = True
+            else:
+                session.question = question
 
         state = await agent_graph.ainvoke({
             "session": session,
@@ -71,10 +76,16 @@ async def guide_question(request: GuideQuestionRequest, current_user_id: str = D
                 content=request.new_message,
             )
         })
+        if is_new_session:
+            await session_dao.create(session)
+        else:
+            await session_dao.update(session)
+
         ai_resp_message = session.get_messages()[-1].content
         return BaseResponse(
             message="success",
             data={
+                "session_id": session.id,
                 "ai_message": ai_resp_message
             }
         )

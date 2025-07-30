@@ -114,13 +114,15 @@ class Session(BaseModel, table=True):
 # 创建会话的工厂函数
 def create_session(
     topic: TopicType,
-    question: Optional[Question] = None,
+    may_question: Optional[Question | str] = None,
     messages: Optional[List[Message]] = None,
 ) -> Session:
     """创建会话实例的工厂函数"""
+    question_id = may_question.id if isinstance(may_question, Question) else may_question
+    question = may_question if isinstance(may_question, Question) else None
     session = Session(
         topic=topic,
-        question_id=question.id if question else None,
+        question_id=question_id,
         question=question,
     )
     

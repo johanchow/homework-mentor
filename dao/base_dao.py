@@ -34,7 +34,7 @@ class BaseDao(ABC):
     async def update(self, model: 'BaseModel'):
         try:
             session_maker = await self._get_session_maker()
-            print(model.model_dump())
+            print('update model:', model.model_dump())
             async with session_maker() as session:
                 # 添加更新时间
                 model.updated_at = datetime.now()

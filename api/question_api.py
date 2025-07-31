@@ -41,9 +41,11 @@ class QuestionCreateRequest(BaseModel):
 
 class QuestionUpdateRequest(BaseModel):
     """更新问题的请求模型"""
+    id: str
     subject: Optional[Subject] = None
     type: Optional[QuestionType] = None
     title: Optional[str] = None
+    material: Optional[str] = None
     options: Optional[List[str]] = None
     images: Optional[List[str]] = None
     audios: Optional[List[str]] = None
@@ -150,37 +152,24 @@ async def create_question_api(request: QuestionCreateRequest, current_user_id: s
 
 
 
-@question_router.put("/{question_id}", response_model=BaseResponse)
-async def update_question_api(question_id: str, request: QuestionUpdateRequest, current_user_id: str = Depends(get_current_user_id)):
+@question_router.put("/update", response_model=BaseResponse)
+async def update_question_api(request: QuestionUpdateRequest, current_user_id: str = Depends(get_current_user_id)):
     """
     更新问题信息
-
-    路径参数:
-    - question_id: 问题ID
-
-    请求参数:
-    - subject: 科目（可选）
-    - type: 问题类型（可选）
-    - title: 题干（可选）
-    - options: 选项列表（可选）
-    - images: 图片列表（可选）
-    - audios: 音频列表（可选）
-    - videos: 视频列表（可选）
-    - is_active: 是否激活（可选）
     """
+    question_id = request.id
     try:
         # 获取现有问题
         question = await question_dao.get_by_id(question_id)
         if not question:
             raise DataNotFoundException("问题", question_id)
 
+        # request的其他值都覆盖到question
+        for key, value in request.model_dump().items():
+            if value is not None:
+                setattr(question, key, value)
+
         # 更新字段
-        if request.subject is not None:
-            question.subject = request.subject
-        if request.type is not None:
-            question.type = request.type
-        if request.title is not None:
-            question.title = request.title
         if request.options is not None:
             question.options = ",".join(request.options) if request.options else None
         if request.images is not None:
@@ -189,8 +178,7 @@ async def update_question_api(question_id: str, request: QuestionUpdateRequest, 
             question.audios = ",".join(request.audios) if request.audios else None
         if request.videos is not None:
             question.videos = ",".join(request.videos) if request.videos else None
-        if request.is_active is not None:
-            question.is_active = request.is_active
+
 
         # 保存更新
         updated_question = await question_dao.update(question)

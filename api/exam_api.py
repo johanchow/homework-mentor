@@ -38,6 +38,13 @@ class ExamResponse(BaseModel):
     message: str
     data: Optional[Dict[str, Any]] = None
 
+class UpdateExamRequest(BaseModel):
+    id: str
+    plan_starttime: Optional[str] = None
+    plan_duration: Optional[int] = None
+    status: Optional[ExamStatus] = None
+    material: Optional[str] = None
+    question_ids: Optional[List[str]] = None
 
 
 
@@ -192,3 +199,29 @@ async def list_exams(
         logger.exception(f"获取考试列表失败: {e}")
         raise HTTPException(status_code=500, detail="获取考试列表失败，请稍后重试")
 
+
+@exam_router.put("/update", response_model=ExamResponse)
+async def update_exam(request: UpdateExamRequest, current_user_id: str = Depends(get_current_user_id)):
+    """更新考试"""
+    try:
+        # 验证考试是否存在
+        exam = await exam_dao.get_by_id(request.id)
+        if not exam:
+            raise DataNotFoundException("考试", request.id)
+
+        # 更新考试
+        request_exam = Exam.from_dict(request.dict())
+        for key, value in request_exam.model_dump().items():
+            if value is not None:
+                setattr(exam, key, value)
+        updated_exam = await exam_dao.update(exam)
+
+
+        return ExamResponse(
+            message='更新考试成功',
+            data=updated_exam.to_dict()
+        )
+
+    except Exception as e:
+        logger.exception(f"更新考试失败: {e}")
+        raise HTTPException(status_code=500, detail="更新考试失败，请稍后重试")

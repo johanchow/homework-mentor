@@ -15,7 +15,7 @@ NC='\033[0m' # No Color
 # 配置变量
 PROJECT_NAME="homework-mentor"
 CONTAINER_NAME="homework-mentor-api"
-IMAGE_NAME="ghcr.io/$(git config --get remote.origin.url | sed 's/.*github.com[:/]\([^/]*\/[^/]*\).*/\1/')"
+IMAGE_NAME="ghcr.io/$(git config --get remote.origin.url | sed -E 's/.*github\.com[:/]([^/]+\/[^/]+)(\.git)?.*/\1/')"
 PORT=5556
 BACKUP_DIR="./backups/$(date +%Y%m%d_%H%M%S)"
 
@@ -57,8 +57,16 @@ check_docker() {
 get_latest_tag() {
     log_info "获取最新镜像标签..."
     
+    # 验证镜像名称格式
+    if [[ ! "$IMAGE_NAME" =~ ^ghcr\.io/[^/]+/[^/]+$ ]]; then
+        log_error "镜像名称格式错误: $IMAGE_NAME"
+        log_info "请检查Git仓库配置或手动设置IMAGE_NAME变量"
+        exit 1
+    fi
+    
     # 尝试从GitHub获取最新标签
-    LATEST_TAG=$(curl -s "https://api.github.com/repos/$(echo $IMAGE_NAME | sed 's/ghcr.io\///')/tags" | jq -r '.[0].name' 2>/dev/null || echo "latest")
+    REPO_NAME=$(echo $IMAGE_NAME | sed 's/ghcr\.io\///')
+    LATEST_TAG=$(curl -s "https://api.github.com/repos/$REPO_NAME/tags" | jq -r '.[0].name' 2>/dev/null || echo "latest")
     
     if [ "$LATEST_TAG" = "null" ] || [ -z "$LATEST_TAG" ]; then
         LATEST_TAG="latest"
@@ -188,6 +196,13 @@ show_service_info() {
 # 主部署函数
 deploy() {
     log_info "开始部署 Homework Mentor..."
+    
+    # 显示调试信息
+    log_info "调试信息:"
+    echo "  Git远程URL: $(git config --get remote.origin.url)"
+    echo "  镜像名称: $IMAGE_NAME"
+    echo "  容器名称: $CONTAINER_NAME"
+    echo "  端口: $PORT"
     
     # 检查Docker环境
     check_docker

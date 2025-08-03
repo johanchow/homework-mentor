@@ -5,18 +5,11 @@ set -e
 APP_NAME="fastapi-app"
 GHCR_REPO="ghcr.io/johanchow/your-repo-name"
 CONTAINER_NAME="fastapi_container"
-PORT=5556
+PORT=8000
 ROLLBACK_TAG_FILE="rollback_tag.txt"
 
 function deploy() {
-    TAG=$1
-    if [ -z "$TAG" ]; then
-        echo "❌ Missing tag"
-        exit 1
-    fi
-
-    echo "✅ Logging in to GHCR"
-    echo $GITHUB_TOKEN | docker login ghcr.io -u johanchow --password-stdin
+    TAG=${1:-latest}
 
     echo "✅ Pulling image: $GHCR_REPO:$TAG"
     docker pull $GHCR_REPO:$TAG
@@ -31,7 +24,7 @@ function deploy() {
     echo "🚀 Starting new container"
     docker run -d \
         --name $CONTAINER_NAME \
-        -p $PORT:5556 \
+        -p $PORT:8000 \
         $GHCR_REPO:$TAG
 }
 
@@ -69,7 +62,7 @@ case "$1" in
         restart
         ;;
     *)
-        echo "Usage: $0 {deploy <tag>|status|rollback|restart}"
+        echo "Usage: $0 {deploy [<tag>]|status|rollback|restart}"
         exit 1
         ;;
 esac

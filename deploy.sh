@@ -50,6 +50,17 @@ function restart() {
     docker restart $CONTAINER_NAME
 }
 
+function logs() {
+    if docker ps | grep -q $CONTAINER_NAME; then
+        echo "📋 Showing logs for $CONTAINER_NAME..."
+        docker logs -f $CONTAINER_NAME
+    else
+        echo "❌ Container $CONTAINER_NAME is not running"
+        echo "💡 Use '$0 status' to check container status"
+        exit 1
+    fi
+}
+
 case "$1" in
     deploy)
         deploy "$2"
@@ -63,8 +74,11 @@ case "$1" in
     restart)
         restart
         ;;
+    logs)
+        logs
+        ;;
     *)
-        echo "Usage: $0 {deploy [<tag>]|status|rollback|restart}"
+        echo "Usage: $0 {deploy [<tag>]|status|rollback|restart|logs}"
         exit 1
         ;;
 esac

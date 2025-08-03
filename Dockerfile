@@ -10,11 +10,23 @@ ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV DEBIAN_FRONTEND=noninteractive
 
-# # 设置 pip 源为清华的镜像源
-# RUN mkdir -p /root/.config/pip && \
-#     echo "[global]" >> /root/.config/pip/pip.conf && \
-#     echo "index-url = https://pypi.tuna.tsinghua.edu.cn/simple" >> /root/.config/pip/pip.conf && \
-#     echo "trusted-host = pypi.tuna.tsinghua.edu.cn" >> /root/.config/pip/pip.conf
+# 安装绝对最小化的系统依赖
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    python3-dev \
+    pkg-config \
+    # 基础图像处理支持（如果使用OpenCV）
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    libjpeg-dev \
+    libpng-dev \
+    # 基础数学库
+    libatlas-base-dev \
+    # 工具软件
+    curl \
+    jq \
+    && rm -rf /var/lib/apt/lists/*
 
 # 复制requirements.txt
 COPY requirements.txt .

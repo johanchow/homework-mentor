@@ -3,7 +3,9 @@
 set -e
 
 APP_NAME="fastapi-app"
-GHCR_REPO="ghcr.io/johanchow/your-repo-name"
+# GitHub Container Registry 仓库地址
+# 格式：ghcr.io/用户名/仓库名
+GHCR_REPO="ghcr.io/johanchow/homework-mentor"
 CONTAINER_NAME="fastapi_container"
 PORT=8000
 ROLLBACK_TAG_FILE="rollback_tag.txt"

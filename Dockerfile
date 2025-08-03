@@ -8,44 +8,13 @@ WORKDIR /app
 ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
+ENV DEBIAN_FRONTEND=noninteractive
 
-# 设置 pip 源为清华的镜像源
-RUN mkdir -p /root/.config/pip && \
-    echo "[global]" >> /root/.config/pip/pip.conf && \
-    echo "index-url = https://pypi.tuna.tsinghua.edu.cn/simple" >> /root/.config/pip/pip.conf && \
-    echo "trusted-host = pypi.tuna.tsinghua.edu.cn" >> /root/.config/pip/pip.conf
-
-# 安装系统依赖
-RUN apt-get update && apt-get install -y \
-    gcc \
-    g++ \
-    libgl1-mesa-glx \
-    libglib2.0-0 \
-    libsm6 \
-    libxext6 \
-    libxrender-dev \
-    libgomp1 \
-    libgthread-2.0-0 \
-    libgtk-3-0 \
-    libavcodec-dev \
-    libavformat-dev \
-    libswscale-dev \
-    libv4l-dev \
-    libxvidcore-dev \
-    libx264-dev \
-    libjpeg-dev \
-    libpng-dev \
-    libtiff-dev \
-    libatlas-base-dev \
-    libhdf5-dev \
-    libhdf5-serial-dev \
-    libhdf5-103 \
-    libqtgui4 \
-    libqtwebkit4 \
-    libqt4-test \
-    python3-dev \
-    pkg-config \
-    && rm -rf /var/lib/apt/lists/*
+# # 设置 pip 源为清华的镜像源
+# RUN mkdir -p /root/.config/pip && \
+#     echo "[global]" >> /root/.config/pip/pip.conf && \
+#     echo "index-url = https://pypi.tuna.tsinghua.edu.cn/simple" >> /root/.config/pip/pip.conf && \
+#     echo "trusted-host = pypi.tuna.tsinghua.edu.cn" >> /root/.config/pip/pip.conf
 
 # 复制requirements.txt
 COPY requirements.txt .

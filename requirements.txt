@@ -1,8 +1,19 @@
-aiomysql==0.2.0
-easyocr==1.7.2
-faiss_cpu==1.11.0
+# 核心 Web 框架
 fastapi==0.116.1
+uvicorn==0.35.0
+
+# 数据验证和配置
+pydantic==2.11.7
+pydantic_settings==2.10.1
+
+# 数据库
+sqlmodel==0.0.24
+SQLAlchemy==2.0.41
+aiomysql==0.2.0
 greenlet==3.2.3
+
+# AI/LLM
+openai==1.97.1
 langchain==0.3.27
 langchain_community==0.3.27
 langchain_core==0.3.72
@@ -11,18 +22,25 @@ langgraph==0.4.8
 langgraph-checkpoint==2.1.0
 langgraph-prebuilt==0.2.2
 langgraph-sdk==0.1.70
+
+# 科学计算
 numpy==2.2.6
-openai==1.97.1
-opencv_contrib_python==4.10.0.84
+
+# 图像处理（只保留一个版本）
 opencv_python_headless==4.12.0.88
 Pillow==11.3.0
-pydantic==2.11.7
-pydantic_settings==2.10.1
-PyJWT==2.10.1
-python-dotenv==1.1.1
+
+# 文档处理
 python_docx==1.2.0
 python_pptx==1.0.2
+
+# 工具库
 Requests==2.32.4
-SQLAlchemy==2.0.41
-sqlmodel==0.0.24
-uvicorn==0.35.0
+PyJWT==2.10.1
+python-dotenv==1.1.1
+
+# 可选：如果需要 OCR 功能，取消注释
+# easyocr==1.7.2
+
+# 可选：如果需要向量搜索，取消注释
+# faiss_cpu==1.11.0

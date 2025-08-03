@@ -1,5 +1,5 @@
-# 使用Python 3.11作为基础镜像
-FROM python:3.11-slim
+# 使用 Alpine Linux 作为基础镜像（更小）
+FROM python:3.11-alpine as builder
 
 # 设置工作目录
 WORKDIR /app
@@ -8,43 +8,48 @@ WORKDIR /app
 ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
-ENV DEBIAN_FRONTEND=noninteractive
-
-# 安装绝对最小化的系统依赖
-RUN apt-get update && apt-get install -y \
-    gcc \
-    g++ \
-    python3-dev \
-    pkg-config \
-    # 基础图像处理支持（如果使用OpenCV）
-    libgl1-mesa-glx \
-    libglib2.0-0 \
-    libjpeg-dev \
-    libpng-dev \
-    # 基础数学库
-    libatlas-base-dev \
-    # 工具软件
-    curl \
-    jq \
-    && rm -rf /var/lib/apt/lists/*
 
 # 复制requirements.txt
-COPY requirements.txt .
+COPY requirements-optimized.txt requirements.txt
 
-# 安装Python依赖
+# 创建虚拟环境并安装依赖
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# 复制应用代码
-COPY . .
+# 生产阶段
+FROM python:3.11-alpine as production
+
+# 设置工作目录
+WORKDIR /app
+
+# 设置环境变量
+ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+
+# 只安装运行时必需的系统依赖
+RUN apk add --no-cache \
+    libjpeg \
+    zlib \
+    curl \
+    jq
+
+# 从构建阶段复制虚拟环境
+COPY --from=builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
 
 # 创建必要的目录
 RUN mkdir -p logs data uploads
 
 # 创建非root用户
-RUN useradd --create-home --shell /bin/bash app && \
+RUN adduser -D -s /bin/sh app && \
     chown -R app:app /app
 USER app
+
+# 复制应用代码
+COPY --chown=app:app . .
 
 # 暴露端口
 EXPOSE 5556

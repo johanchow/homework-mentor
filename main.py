@@ -57,16 +57,6 @@ class StartupChecker:
         """检查环境变量"""
         self.logger.info("🔍 检查环境变量...")
         
-        # 确保环境变量已加载
-        from utils.env import EnvUtils
-        EnvUtils()
-        
-        # 检查.env文件是否存在，如果不存在则创建示例文件
-        if not os.path.exists('.env'):
-            self.log_warning(".env 文件不存在，正在创建示例文件...")
-            self._create_env_example()
-            self.log_warning("请编辑 .env 文件，添加你的 API 密钥")
-        
         # 必需的环境变量
         required_vars = []
         

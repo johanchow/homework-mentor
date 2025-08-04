@@ -7,7 +7,7 @@ APP_NAME="fastapi-app"
 # 格式：ghcr.io/用户名/仓库名
 GHCR_REPO="ghcr.io/johanchow/homework-mentor"
 CONTAINER_NAME="fastapi_container"
-PORT=8000
+PORT=5556
 ROLLBACK_TAG_FILE="rollback_tag.txt"
 
 function deploy() {
@@ -27,7 +27,7 @@ function deploy() {
     docker run -d \
         --name $CONTAINER_NAME \
         --env-file .env \
-        -p $PORT:8000 \
+        -p $PORT:5556 \
         $GHCR_REPO:$TAG
 }
 

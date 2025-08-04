@@ -17,7 +17,7 @@ class Settings(BaseSettings):
 
     # LLM配置
     OPENAI_API_KEY: Optional[str] = None
-    DASHSCOPE_API_KEY: Optional[str] = None
+    DASHSCOPE_API_KEY: str = None
     OPENAI_MODEL: str = "gpt-3.5-turbo"
     OPENAI_TEMPERATURE: float = 0.7
     OPENAI_MAX_TOKENS: int = 2000
@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     LOG_FORMAT: str = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
     # 数据库配置（如果需要）
-    DATABASE_URL: Optional[str] = None
+    DATABASE_URL: str = None
 
     class Config:
         env_file = ".env"

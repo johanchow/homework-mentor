@@ -26,6 +26,7 @@ function deploy() {
     echo "🚀 Starting new container"
     docker run -d \
         --name $CONTAINER_NAME \
+        --env-file .env \
         -p $PORT:8000 \
         $GHCR_REPO:$TAG
 }

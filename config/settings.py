@@ -5,6 +5,7 @@
 import os
 from typing import Optional
 from pydantic_settings import BaseSettings
+from dotenv import load_dotenv
 
 
 class Settings(BaseSettings):
@@ -40,6 +41,7 @@ class Settings(BaseSettings):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        load_dotenv()
 
 
 # 创建全局配置实例

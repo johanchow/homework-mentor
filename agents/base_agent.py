@@ -68,8 +68,15 @@ class BaseAgent(ABC):
             updated_at=datetime.now()
         )
 
-    @abstractmethod
     async def process_guide(self, session: Session, latest_message: Message) -> str:
+        """处理用户查询"""
+        resp_content = await self._process_guide(session, latest_message)
+        session.add_message(Message(role=MessageRole.USER, content=latest_message.content))
+        session.add_message(Message(role=MessageRole.ASSISTANT, content=resp_content))
+        return resp_content
+
+    @abstractmethod
+    async def _process_guide(self, session: Session, latest_message: Message) -> str:
         """处理用户查询"""
         pass
 

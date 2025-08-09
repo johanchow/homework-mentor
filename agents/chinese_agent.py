@@ -39,7 +39,7 @@ class ChineseTeacherAgent(BaseAgent):
         ''')
         self.ask_prompt = ''
 
-    async def process_guide(self, session: Session, latest_message: Message) -> str:
+    async def _process_guide(self, session: Session, latest_message: Message) -> str:
         """处理用户查询 - 使用AgentExecutor"""
         prompt_message = Message(role=MessageRole.SYSTEM, content="你是一位经验丰富的中文老师，擅长语文教学和指导。")
         question_message = session.question.to_message()

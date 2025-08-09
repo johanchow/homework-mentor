@@ -29,6 +29,9 @@ class BaseResponse(BaseModel):
     message: str
     data: Optional[Dict[str, Any]] = None
 
+class UserChatMessage(BaseModel):
+    text: str
+    image_url: Optional[str] = None
 
 # 请求模型
 class GenerateQuestionsRequest(BaseModel):
@@ -45,13 +48,27 @@ class AnalyzeQuestionRequest(BaseModel):
 
 class GuideQuestionRequest(BaseModel):
     question_id: str
-    new_message: str
+    new_message: UserChatMessage
+    session_id: Optional[str] = None
+
+class GossipChatRequest(BaseModel):
+    new_message: UserChatMessage
     session_id: Optional[str] = None
 
 
 @ai_router.post("/guide-question", response_model=BaseResponse)
 async def guide_question(request: GuideQuestionRequest, current_user_id: str = Depends(get_current_user_id)):
     """引导用户分析题目"""
+    logger.info(f"/guide-question收到请求: {request.new_message}")
+    print(f"/guide-question收到请求: {request.new_message}")
+    if request.new_message.image_url:
+        content = [
+            {"type": "text", "text": request.new_message.text},
+            {"type": "image_url", "image_url": {"url": request.new_message.image_url}}
+        ]
+    else:
+        content = request.new_message.text
+
     try:
         question = await question_dao.get_by_id(request.question_id)
         if not question:
@@ -73,7 +90,7 @@ async def guide_question(request: GuideQuestionRequest, current_user_id: str = D
             "session": session,
             "latest_message": create_message(
                 role=MessageRole.USER,
-                content=request.new_message,
+                content=content,
             )
         })
         if is_new_session:
@@ -95,6 +112,48 @@ async def guide_question(request: GuideQuestionRequest, current_user_id: str = D
     except Exception as e:
         logger.exception(f"引导题目分析失败: {e}")
         raise HTTPException(status_code=500, detail=f"引导题目分析失败: {str(e)}")
+
+@ai_router.post("/gossip-chat", response_model=BaseResponse)
+async def gossip_chat(request: GossipChatRequest, current_user_id: str = Depends(get_current_user_id)):
+    """闲聊"""
+    logger.info(f"/gossip-chat收到请求: {request.new_message}")
+    print(f"/gossip-chat收到请求: {request.new_message}")
+    if request.new_message.image_url:
+        content = [
+            {"type": "text", "text": request.new_message.text},
+            {"type": "image_url", "image_url": {"url": request.new_message.image_url}}
+        ]
+    else:
+        content = request.new_message.text
+
+    try:
+        if not request.session_id:
+            session = create_session(TopicType.GOSSIP, None)
+        else:
+            session = await session_dao.get_by_id(request.session_id)
+            if not session:
+                session = create_session(TopicType.GOSSIP, None)
+
+        state = await agent_graph.ainvoke({
+            "session": session,
+            "latest_message": create_message(
+                role=MessageRole.USER,
+                content=content,
+            )
+        })
+    except Exception as e:
+        logger.error(f"分析问题失败了: {e}")
+        raise e
+
+    ai_resp_message = session.get_messages()[-1].content
+    logger.info(f"/gossip-chat返回结果: {ai_resp_message}")
+    return BaseResponse(
+        message="success",
+        data={
+            "session_id": session.id,
+            "ai_message": ai_resp_message
+        }
+    )
 
 
 @ai_router.post("/generate-questions", response_model=BaseResponse)

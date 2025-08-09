@@ -33,7 +33,7 @@ def decide_route(state: AgentState):
         subject = "english"
         return f"{subject}-topic-import"
     else:
-        return "gossip"
+        return "topic-gossip"
 
 
 # Define the function that calls the model
@@ -42,8 +42,6 @@ async def call_chinese_guide(state: AgentState):
     chinese_agent = get_chinese_agent()
     session = state["session"]
     resp_content = await chinese_agent.process_guide(state["session"], state["latest_message"])
-    session.add_message(Message(role=MessageRole.USER, content=state["latest_message"].content))
-    session.add_message(Message(role=MessageRole.ASSISTANT, content=resp_content))
     return {"session": session}
 
 async def call_chinese_raiser(state: AgentState):
@@ -60,8 +58,9 @@ async def call_english_import(state: AgentState):
 
 async def call_gossip_agent(state: AgentState):
     gossip_agent = get_gossip_agent()
-    response = await gossip_agent.process_guide(state["session"], state["latest_message"])
-    return {"messages": response}
+    resp_content = await gossip_agent.process_guide(state["session"], state["latest_message"])
+    print('gossip_agent resp_content', resp_content)
+    return {"session": state["session"]}
 
 
 def create_workflow() -> CompiledGraph:
@@ -73,7 +72,7 @@ def create_workflow() -> CompiledGraph:
     graph.add_node("math-topic-guide", call_chinese_guide)
     graph.add_node("chinese-topic-raise", call_chinese_raiser)
     graph.add_node("english-topic-import", call_english_import)
-    graph.add_node("gossip", call_gossip_agent)
+    graph.add_node("topic-gossip", call_gossip_agent)
     graph.add_conditional_edges(
         START,
         decide_route,

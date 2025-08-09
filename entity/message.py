@@ -125,10 +125,32 @@ class Message(BaseModel):
         Returns:
             LLM消息格式的字典
         """
-        llm_message = {
-            "role": self.role.value,
-            "content": self.content
-        }
+        if isinstance(self.content, str):
+            llm_message = {
+                "role": self.role.value,
+                "content": self.content
+            }
+        elif isinstance(self.content, list):
+            llm_content = []
+            for item in self.content:
+                if item.get("type") == "text":
+                    llm_content.append({"type": "text", "text": item.get("text")})
+                elif item.get("type") == "image_url":
+                    llm_content.append({
+                        "type": "image_url",
+                        "image_url": {
+                            "url": item.get("image_url", {}).get("url")
+                        }
+                    })
+            llm_message = {
+                "role": self.role.value,
+                "content": llm_content
+            }
+
+        # llm_message = {
+        #     "role": self.role.value,
+        #     "content": self.content
+        # }
 
         # 添加元数据
         if self.metadata:

@@ -19,6 +19,7 @@ class TopicType(str, Enum):
     GUIDE = "guide"       # 指导
     RAISE = "raise"       # 出题
     IMPORT = "import"     # 导入题
+    GOSSIP = "gossip"     # 闲聊
 
 class Session(BaseModel, table=True):
     """会话实体类"""

@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from langchain.schema import BaseMessage
 from langchain_openai import ChatOpenAI
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 from langchain.chat_models.base import init_chat_model
 from langchain_community.chat_models import ChatTongyi
 from entity.session import Session
@@ -64,8 +64,8 @@ class BaseAgent(ABC):
         self.state = AgentState(
             agent_id=self.agent_id,
             agent_type=self.agent_type,
-            created_at=datetime.now(),
-            updated_at=datetime.now()
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc)
         )
 
     async def process_guide(self, session: Session, latest_message: Message) -> str:
@@ -166,7 +166,7 @@ class BaseAgent(ABC):
     def update_state(self, status: str, task: Optional[str] = None, metadata: Dict[str, Any] = None):
         """更新Agent状态"""
         self.state.status = status
-        self.state.updated_at = datetime.now()
+        self.state.updated_at = datetime.now(timezone.utc)
 
         if task:
             self.state.current_task = task

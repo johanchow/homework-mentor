@@ -29,12 +29,31 @@ def markdown_to_json(text: str) -> str:
 def iso_to_mysql_datetime(date_str: Union[str, None]) -> Union[datetime, None]:
     """
     将 ISO 8601 或 MySQL datetime 格式字符串转换为 datetime 对象
+    只做类型转换，不进行时区转换
     """
     if date_str is None:
         return None
+    
+    # 移除时区标识符（如 Z, +00:00, -05:00 等）
+    if date_str.endswith('Z'):
+        date_str = date_str[:-1]  # 移除 Z
+    elif '+' in date_str:
+        date_str = date_str.split('+')[0]  # 移除 +00:00 等
+    elif '-' in date_str and date_str.count('-') > 2:
+        # 处理类似 2023-01-01T12:00:00-05:00 的格式
+        parts = date_str.split('-')
+        if len(parts) > 3:
+            date_str = '-'.join(parts[:-2]) + '-' + parts[-2].split(':')[0] + ':' + parts[-2].split(':')[1]
+    
     try:
-        # 尝试 ISO 8601 格式
-        return datetime.strptime(date_str, '%Y-%m-%dT%H:%M:%S.%fZ')
+        # 尝试 ISO 8601 格式（带毫秒）
+        return datetime.strptime(date_str, '%Y-%m-%dT%H:%M:%S.%f')
+    except ValueError:
+        pass
+
+    try:
+        # 尝试 ISO 8601 格式（不带毫秒）
+        return datetime.strptime(date_str, '%Y-%m-%dT%H:%M:%S')
     except ValueError:
         pass
 
@@ -49,8 +68,9 @@ def iso_to_mysql_datetime(date_str: Union[str, None]) -> Union[datetime, None]:
 
 def mysql_datetime_to_iso(dt: Union[datetime, None]) -> Union[str, None]:
     """
-    将 datetime 对象转换为 ISO 8601 格式字符串（带毫秒和Z时区标识）
+    将 datetime 对象转换为 ISO 8601 格式字符串（带毫秒，不添加时区标识）
+    只做类型转换，不进行时区转换
     """
     if dt is None:
         return None
-    return dt.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
+    return dt.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]

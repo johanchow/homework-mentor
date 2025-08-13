@@ -7,7 +7,7 @@ from typing import List, Optional, Dict, Any
 from sqlmodel import SQLModel, Field, Relationship
 from pydantic import PrivateAttr
 from enum import Enum
-from datetime import datetime
+from datetime import datetime, timezone
 from entity.base import BaseModel
 from entity.message import Message, MessageRole, MessageType
 from entity.question import Question, Subject
@@ -41,8 +41,8 @@ class Session(BaseModel, table=True):
     messages: Optional[str] = Field(default=None, description="消息列表JSON字符串")
     
     # 时间信息
-    created_at: datetime = Field(default_factory=datetime.now, description="创建时间")
-    updated_at: datetime = Field(default_factory=datetime.now, description="更新时间")
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="创建时间")
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="更新时间")
 
     # 状态信息
     is_deleted: bool = Field(default=False, description="是否已删除")
@@ -63,7 +63,7 @@ class Session(BaseModel, table=True):
         messages_dict_list = json.loads(self.messages) if self.messages else []
         messages_dict_list.append(message.to_dict())
         self.messages = json.dumps(messages_dict_list, ensure_ascii=False)
-        self.updated_at = datetime.now()
+        self.updated_at = datetime.now(timezone.utc, tzinfo=timezone.utc)
 
     def get_messages(self) -> List[Message]:
         """获取消息列表"""
@@ -75,7 +75,7 @@ class Session(BaseModel, table=True):
     def clear_messages(self) -> None:
         """清空所有消息"""
         self.messages = json.dumps([], ensure_ascii=False)
-        self.updated_at = datetime.now()
+        self.updated_at = datetime.now(timezone.utc, tzinfo=timezone.utc)
 
     def to_dict(self) -> Dict[str, Any]:
         """转换为字典格式"""

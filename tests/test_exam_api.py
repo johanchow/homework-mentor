@@ -4,7 +4,7 @@
 
 import requests
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 
 # API基础URL
 BASE_URL = "http://localhost:5000"
@@ -70,7 +70,7 @@ def test_exam_api():
                         "role": "user",
                         "content": "用户回答（已更新）",
                         "message_type": "text",
-                        "timestamp": datetime.now().isoformat()
+                        "timestamp": datetime.now(timezone.utc).isoformat()
                     }
                 ]
             },

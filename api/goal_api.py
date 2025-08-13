@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from entity.goal import Goal, GoalStatus, Subject, create_goal
 from dao.goal_dao import goal_dao
 from dao.user_dao import user_dao
@@ -199,7 +199,7 @@ async def update_goal_api(goal_id: str, request: UpdateGoalRequest, current_user
             goal.ai_prompt = request.ai_prompt
 
         # 更新修改时间
-        goal.updated_at = datetime.now()
+        goal.updated_at = datetime.now(timezone.utc)
 
         # 保存到数据库
         updated_goal = await goal_dao.update(goal)

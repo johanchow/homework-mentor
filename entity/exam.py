@@ -97,9 +97,9 @@ class Exam(BaseModel, table=True):
         for field in ['answer']:
             if isinstance(data.get(field), Answer):
                 data[field] = data[field].model_dump_json()
-        for field in ['plan_starttime', 'actual_starttime']:
+        for field in ['plan_starttime', 'actual_starttime', 'created_at', 'updated_at']:
             if data.get(field):
-                data[field] = iso_to_mysql_datetime(data[field])
+                data[field] = datetime.fromisoformat(data[field])
         return cls(**data)
 
     def to_dict(self) -> dict:
@@ -107,10 +107,12 @@ class Exam(BaseModel, table=True):
         result = {}
         for field in self.__fields__:
             value = getattr(self, field)
+            if not value:
+                continue
             if field in ['question_ids']:
                 result[field] = value.split(',') if value else []
-            elif field in ['plan_starttime', 'actual_starttime']:
-                result[field] = mysql_datetime_to_iso(value)
+            elif field in ['plan_starttime', 'actual_starttime', 'created_at', 'updated_at']:
+                result[field] = value.replace(tzinfo=timezone.utc).isoformat()
             else:
                 result[field] = value
         return result

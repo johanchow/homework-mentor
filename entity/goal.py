@@ -5,7 +5,7 @@
 from typing import Optional
 from sqlmodel import SQLModel, Field, Relationship
 from enum import Enum
-from datetime import datetime
+from datetime import datetime, timezone
 from entity.base import BaseModel
 from utils.helpers import random_uuid
 from entity.user import User
@@ -44,8 +44,8 @@ class Goal(BaseModel, table=True):
     ai_prompt: Optional[str] = Field(default=None, description="AI提示词")
 
     # 时间信息
-    created_at: datetime = Field(default_factory=datetime.now, description="创建时间")
-    updated_at: datetime = Field(default_factory=datetime.now, description="更新时间")
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="创建时间")
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="更新时间")
 
     # 创建人信息
     creator_id: str = Field(..., description="创建人ID", foreign_key="user.id")

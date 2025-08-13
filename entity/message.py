@@ -2,7 +2,7 @@ from typing import Dict, List, Optional, Union, Any
 from enum import Enum
 import json
 import base64
-from datetime import datetime
+from datetime import datetime, timezone
 from pydantic import BaseModel, Field
 from utils.helpers import random_uuid
 
@@ -39,7 +39,7 @@ class Message(BaseModel):
     message_type: MessageType = Field(default=MessageType.TEXT, description="消息类型")
 
     # 时间戳
-    timestamp: datetime = Field(default_factory=datetime.now, description="时间戳")
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="时间戳")
 
     # 元数据
     metadata: Optional[Dict[str, Any]] = Field(default=None, description="元数据")
@@ -242,7 +242,7 @@ class Message(BaseModel):
             role=data.get("role", "user"),
             content=data.get("content", ""),
             message_type=MessageType(data.get("message_type", "text")),
-            timestamp=datetime.fromisoformat(data["timestamp"]) if data.get("timestamp") else None,
+            timestamp=datetime.fromisoformat(data["timestamp"], timezone.utc) if data.get("timestamp") else None,
             id=data.get("id"),
             metadata=data.get("metadata", {})
         )
@@ -261,7 +261,7 @@ def create_message(
     role: MessageRole,
     content: Union[str, List[Dict[str, Any]]],
     message_type: MessageType = MessageType.TEXT,
-    timestamp: Optional[datetime] = datetime.now(),
+    timestamp: Optional[datetime] = datetime.now(timezone.utc),
     metadata: Optional[Dict[str, Any]] = None
 ) -> Message:
     """创建消息实例的工厂函数"""

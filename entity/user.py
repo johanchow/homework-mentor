@@ -5,7 +5,7 @@
 from typing import Optional, List
 from sqlmodel import SQLModel, Field, Relationship
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 import hashlib
 import os
 from utils.helpers import random_uuid
@@ -24,8 +24,8 @@ class User(SQLModel, table=True):
     avatar: Optional[str] = Field(default=None, description="头像URL")
 
     # 时间信息
-    created_at: datetime = Field(default_factory=datetime.now, description="创建时间")
-    updated_at: datetime = Field(default_factory=datetime.now, description="更新时间")
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="创建时间")
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="更新时间")
 
     # 状态信息
     is_active: bool = Field(default=True, description="是否激活")

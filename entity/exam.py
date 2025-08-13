@@ -4,7 +4,7 @@
 
 import json
 from enum import Enum
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, List
 from sqlmodel import Field, Relationship
 from pydantic import PrivateAttr
@@ -55,8 +55,8 @@ class Exam(BaseModel, table=True):
     actual_duration: int = Field(default=0, description="实际耗时")
 
     # 时间信息
-    created_at: datetime = Field(default_factory=datetime.now, description="创建时间")
-    updated_at: datetime = Field(default_factory=datetime.now, description="更新时间")
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="创建时间")
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="更新时间")
 
     # 状态信息
     is_deleted: bool = Field(default=False, description="是否已删除")

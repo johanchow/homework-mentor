@@ -5,7 +5,7 @@
 from typing import List, Optional, ClassVar
 from sqlmodel import SQLModel, Field, Relationship
 from entity.base import BaseModel
-from datetime import datetime
+from datetime import datetime, timezone
 from pydantic import PrivateAttr
 from .question import Question
 from .user import User
@@ -30,8 +30,8 @@ class Paper(BaseModel, table=True):
     creator: User = Relationship(back_populates="papers")
 
     # 时间信息
-    created_at: datetime = Field(default_factory=datetime.now, description="创建时间")
-    updated_at: datetime = Field(default_factory=datetime.now, description="更新时间")
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="创建时间")
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="更新时间")
 
     # 状态信息
     is_deleted: bool = Field(default=False, description="是否已删除")

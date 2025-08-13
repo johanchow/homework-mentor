@@ -4,7 +4,7 @@ from typing import List, Union, Dict, Any
 from sqlalchemy import func
 from sqlmodel import select, update, delete
 from sqlalchemy.ext.asyncio import AsyncSession
-from datetime import datetime
+from datetime import datetime, timezone
 import logging
 
 logger = logging.getLogger(__name__)
@@ -37,7 +37,7 @@ class BaseDao(ABC):
             print('update model:', model.model_dump())
             async with session_maker() as session:
                 # 添加更新时间
-                model.updated_at = datetime.now()
+                model.updated_at = datetime.now(timezone.utc)
                 statement = (
                     update(model.__class__)
                     .where(model.__class__.id == model.id)
@@ -57,7 +57,7 @@ class BaseDao(ABC):
                 statement = (
                     update(model.__class__)
                     .where(model.__class__.id == model.id)
-                    .values(is_deleted=True, updated_at=datetime.now())
+                    .values(is_deleted=True, updated_at=datetime.now(timezone.utc))
                 )
                 await session.execute(statement)
                 await session.commit()

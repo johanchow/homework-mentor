@@ -10,7 +10,7 @@ from langchain.schema import HumanMessage, SystemMessage, AIMessage, BaseMessage
 from langchain.agents import AgentExecutor, create_openai_functions_agent
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 from utils.llm import LLM
 from entity.session import Session
 from entity.message import Message, MessageRole, create_message
@@ -108,7 +108,7 @@ class ChineseTeacherAgent(BaseAgent):
         # 获取或创建会话ID
         session_id = context.get("session_id") if context else None
         if not session_id:
-            session_id = f"session_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+            session_id = f"session_{datetime.now(timezone.utc).isoformat()}"
             self.current_session_id = session_id
 
         # 获取对话历史
@@ -152,14 +152,14 @@ class ChineseTeacherAgent(BaseAgent):
         new_turn = {
             "role": "user",
             "content": task,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }
         conversation_history.append(new_turn)
 
         assistant_turn = {
             "role": "assistant",
             "content": response.content,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }
         conversation_history.append(assistant_turn)
 
@@ -175,7 +175,7 @@ class ChineseTeacherAgent(BaseAgent):
 
     def start_conversation(self, student_info: Dict[str, Any] = None) -> str:
         """开始新的对话会话"""
-        session_id = f"session_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        session_id = f"session_{datetime.now(timezone.utc).isoformat()}"
         self.current_session_id = session_id
 
         # 记录学生信息
@@ -183,7 +183,7 @@ class ChineseTeacherAgent(BaseAgent):
             self.conversation_history.append({
                 "type": "student_info",
                 "data": student_info,
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now(timezone.utc).isoformat()
             })
 
         return session_id

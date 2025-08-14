@@ -13,34 +13,14 @@ logger = logging.getLogger(__name__)
 
 # 异步数据库引擎
 async_engine = None
-async_session_maker = None
 
 
-def get_database_url() -> str:
-    """获取数据库URL"""
-    if settings.DATABASE_URL:
-        return settings.DATABASE_URL
-    else:
-        # 默认使用SQLite
-        return "sqlite+aiosqlite:///./homework_mentor.db"
-
-
-async def create_async_database_engine():
+def create_async_database_engine():
     """创建异步数据库引擎"""
     global async_engine, async_session_maker
-    database_url = get_database_url()
+    database_url = settings.DATABASE_URL
     
-    # 转换为异步URL
-    # if database_url.startswith("sqlite://"):
-    #     database_url = database_url.replace("sqlite://", "sqlite+aiosqlite://", 1)
-    # elif database_url.startswith("mysql://"):
-    #     database_url = database_url.replace("mysql://", "mysql+aiomysql://", 1)
-    # elif database_url.startswith("postgresql://"):
-    #     database_url = database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
-    
-    logger.info(f"连接异步数据库: {database_url}")
-    database_url = "mysql+aiomysql://root:Abc%40123456@gz-cdb-bebkypyn.sql.tencentcdb.com:29750/homework-mentor"
-    print(f"连接异步数据库: {database_url}")
+    logger.info("创建数据库连接管理引擎")
     
     async_engine = create_async_engine(
         database_url,
@@ -58,11 +38,11 @@ async def create_async_database_engine():
     return async_engine
 
 
-async def get_async_engine():
+def get_async_engine():
     """获取异步数据库引擎"""
     global async_engine
     if async_engine is None:
-        async_engine = await create_async_database_engine()
+        async_engine = create_async_database_engine()
     return async_engine
 
 

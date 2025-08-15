@@ -81,38 +81,6 @@ class StartupChecker:
                 
         return len([var for var in required_vars if not os.getenv(var)]) == 0
     
-    def check_database_connection(self) -> bool:
-        """检查数据库连接"""
-        self.logger.info("🔍 检查数据库连接...")
-        
-        if not settings.DATABASE_URL:
-            self.log_warning("未配置数据库URL，跳过数据库连接检查")
-            return True
-            
-        try:
-            # 尝试导入数据库相关模块
-            from dao.database import create_async_database_engine
-            from sqlalchemy import text
-            
-            # 测试连接
-            async def test_connection():
-                # 创建数据库引擎
-                engine = await create_async_database_engine()
-                async with engine.begin() as conn:
-                    await conn.execute(text("SELECT 1"))
-                    
-            asyncio.run(test_connection())
-            self.log_success("数据库连接正常")
-            return True
-            
-        except Exception as e:
-            self.log_error(f"数据库连接失败: {str(e)}")
-            return False
-    
-        except Exception as e:
-            self.log_error(f"API配置检查失败: {str(e)}")
-            return False
-    
     def run_all_checks(self) -> bool:
         """运行所有检查"""
         self.logger.info("🚀 开始启动前检查...")
@@ -121,7 +89,6 @@ class StartupChecker:
         checks = [
             ("Python版本", self.check_python_version),
             ("环境变量", self.check_environment_variables),
-            ("数据库连接", self.check_database_connection),
         ]
         
         all_passed = True

@@ -24,6 +24,26 @@ app = FastAPI(
     version="1.0.0"
 )
 
+@app.on_event("startup")
+async def startup_event():
+    logger.info("FastAPI启动事件")
+    try:
+        # 尝试导入数据库相关模块
+        from dao.database import create_async_database_engine
+        from sqlalchemy import text
+        
+        # 创建数据库引擎
+        logger.info("检查数据库连接")
+        engine = create_async_database_engine()
+        async with engine.begin() as conn:
+            await conn.execute(text("SELECT 1"))
+        
+    except Exception as e:
+        logger.error(f"数据库连接失败: {str(e)}")
+        raise e
+
+
+
 # 配置CORS
 app.add_middleware(
     CORSMiddleware,

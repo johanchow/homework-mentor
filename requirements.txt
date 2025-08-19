@@ -37,6 +37,7 @@ python_pptx==1.0.2
 # 工具库
 Requests==2.32.4
 PyJWT==2.10.1
+PyMuPDF==1.26.3
 python-dotenv==1.1.1
 
 # 可选：如果需要 OCR 功能，取消注释

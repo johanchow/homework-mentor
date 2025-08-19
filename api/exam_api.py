@@ -136,17 +136,18 @@ async def get_exam(id: str = Query(..., description="考试ID"), current_user_id
             questions = await question_dao.search_by_kwargs({'id': {'$in': question_id_list}})
             exam_data['questions'] = [q.to_dict() for q in questions]
 
-        return ExamResponse(
-            message='获取考试详情成功',
-            data=exam_data
-        )
-
     except BusinessException:
         raise
 
     except Exception as e:
         logger.exception(f"获取考试详情失败: {e}")
         raise HTTPException(status_code=500, detail="获取考试详情失败，请稍后重试")
+
+    exam_data['questions'].sort(key=lambda x: question_id_list.index(x['id']))
+    return ExamResponse(
+        message='获取考试详情成功',
+        data=exam_data
+    )
 
 
 @exam_router.get("/list")

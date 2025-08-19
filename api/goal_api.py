@@ -36,10 +36,12 @@ class CreateGoalRequest(BaseModel):
 
 
 class UpdateGoalRequest(BaseModel):
+    id: Optional[str] = None
     name: Optional[str] = None
     subject: Optional[Subject] = None
     status: Optional[GoalStatus] = None
     ai_prompt: Optional[str] = None
+    updated_at: Optional[datetime] = None
 
 
 # API接口
@@ -168,8 +170,8 @@ async def get_goal_api(id: str = Query(..., description="目标ID"), current_use
         raise HTTPException(status_code=500, detail=f"获取目标失败: {str(e)}")
 
 
-@goal_router.put("/{goal_id}", response_model=BaseResponse)
-async def update_goal_api(goal_id: str, request: UpdateGoalRequest, current_user_id: str = Depends(get_current_user_id)):
+@goal_router.put("/update", response_model=BaseResponse)
+async def update_goal(request: UpdateGoalRequest, current_user_id: str = Depends(get_current_user_id)):
     """
     更新目标
 
@@ -184,27 +186,16 @@ async def update_goal_api(goal_id: str, request: UpdateGoalRequest, current_user
     """
     try:
         # 获取现有目标
-        goal = await goal_dao.get_by_id(goal_id)
+        goal = await goal_dao.get_by_id(request.id)
         if not goal:
-            raise DataNotFoundException("目标", goal_id)
-
-        # 更新字段
-        if request.name is not None:
-            goal.name = request.name
-        if request.subject is not None:
-            goal.subject = request.subject
-        if request.status is not None:
-            goal.status = request.status
-        if request.ai_prompt is not None:
-            goal.ai_prompt = request.ai_prompt
-
-        # 更新修改时间
-        goal.updated_at = datetime.now(timezone.utc)
+            raise DataNotFoundException("目标", request.id)
 
         # 保存到数据库
-        updated_goal = await goal_dao.update(goal)
+        # 将 UpdateGoalRequest 转换为 Goal 对象
+        goal_data = request.model_dump(exclude_unset=True)
+        updated_goal = await goal_dao.update(Goal(**goal_data))
 
-        logger.info(f"更新目标成功: {goal_id}")
+        logger.info(f"更新目标成功: {request.id}")
         return BaseResponse(
             message='目标更新成功',
             data=updated_goal.to_dict()

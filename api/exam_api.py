@@ -23,7 +23,7 @@ exam_router = APIRouter(prefix="/exam", tags=["考试管理"])
 class CreateExamRequest(BaseModel):
     goal_id: str
     examinee_id: str
-    question_ids: str
+    question_ids: List[str]
     plan_starttime: str
     plan_duration: int
 
@@ -154,6 +154,7 @@ async def get_exam(id: str = Query(..., description="考试ID"), current_user_id
 async def list_exams(
     plan_starttime_from: Optional[str] = Query(None, description="开始时间（大于等于）"),
     plan_starttime_to: Optional[str] = Query(None, description="结束时间（小于等于）"),
+    goal_id: Optional[str] = Query(None, description="目标ID"),
     page: int = Query(1, description="页码"),
     page_size: int = Query(10, description="每页数量"),
     current_user_id: str = Depends(get_current_user_id)
@@ -167,6 +168,8 @@ async def list_exams(
         # 构建查询条件
         kwargs = {'is_deleted': False, 'examinee_id': current_user_id}
         
+        if goal_id:
+            kwargs['goal_id'] = goal_id
         # 添加时间过滤条件
         if plan_starttime_from and plan_starttime_to:
             # 如果同时有开始和结束时间，使用between

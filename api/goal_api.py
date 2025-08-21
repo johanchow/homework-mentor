@@ -208,8 +208,8 @@ async def update_goal(request: UpdateGoalRequest, current_user_id: str = Depends
         raise HTTPException(status_code=500, detail=f"更新目标失败: {str(e)}")
 
 
-@goal_router.delete("/delete", response_model=BaseResponse)
-async def delete_goal_api(id: str = Query(..., description="目标ID"), current_user_id: str = Depends(get_current_user_id)):
+@goal_router.delete("/{id}", response_model=BaseResponse)
+async def delete_goal_api(id: str, current_user_id: str = Depends(get_current_user_id)):
     """
     删除目标（软删除）
 

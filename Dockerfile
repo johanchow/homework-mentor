@@ -9,17 +9,13 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # 安装构建依赖
 RUN apt-get update && apt-get install -y \
-    gcc \
-    g++ \
-    python3-dev \
-    pkg-config \
-    libgl1-mesa-glx \
+    gcc g++ python3-dev pkg-config \
+    libgl1 \
     libglib2.0-0 \
     libjpeg-dev \
     libpng-dev \
-    libatlas-base-dev \
-    curl \
-    jq \
+    libopenblas-dev \
+    curl jq \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
@@ -41,13 +37,13 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # 只安装运行时必需的系统依赖
 RUN apt-get update && apt-get install -y \
-    libgl1-mesa-glx \
+    gcc g++ python3-dev pkg-config \
+    libgl1 \
     libglib2.0-0 \
-    libjpeg62-turbo \
-    libpng16-16 \
-    libatlas-base-dev \
-    curl \
-    jq \
+    libjpeg-dev \
+    libpng-dev \
+    libopenblas-dev \
+    curl jq \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 

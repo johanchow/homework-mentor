@@ -242,7 +242,7 @@ class Message(BaseModel):
             role=data.get("role", "user"),
             content=data.get("content", ""),
             message_type=MessageType(data.get("message_type", "text")),
-            timestamp=datetime.fromisoformat(data["timestamp"], timezone.utc) if data.get("timestamp") else None,
+            timestamp=datetime.fromisoformat(data["timestamp"]) if data.get("timestamp") else None,
             id=data.get("id"),
             metadata=data.get("metadata", {})
         )

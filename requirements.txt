@@ -22,6 +22,7 @@ langgraph==0.4.8
 langgraph-checkpoint==2.1.0
 langgraph-prebuilt==0.2.2
 langgraph-sdk==0.1.70
+dashscope==1.23.6
 
 # 科学计算
 numpy==2.2.6
@@ -41,7 +42,7 @@ PyMuPDF==1.26.3
 python-dotenv==1.1.1
 
 # 可选：如果需要 OCR 功能，取消注释
-# easyocr==1.7.2
+easyocr==1.7.2
 
 # 可选：如果需要向量搜索，取消注释
 # faiss_cpu==1.11.0

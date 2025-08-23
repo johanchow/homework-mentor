@@ -63,7 +63,7 @@ class Session(BaseModel, table=True):
         messages_dict_list = json.loads(self.messages) if self.messages else []
         messages_dict_list.append(message.to_dict())
         self.messages = json.dumps(messages_dict_list, ensure_ascii=False)
-        self.updated_at = datetime.now(timezone.utc, tzinfo=timezone.utc)
+        self.updated_at = datetime.now(timezone.utc)
 
     def get_messages(self) -> List[Message]:
         """获取消息列表"""
@@ -75,7 +75,7 @@ class Session(BaseModel, table=True):
     def clear_messages(self) -> None:
         """清空所有消息"""
         self.messages = json.dumps([], ensure_ascii=False)
-        self.updated_at = datetime.now(timezone.utc, tzinfo=timezone.utc)
+        self.updated_at = datetime.now(timezone.utc)
 
     def to_dict(self) -> Dict[str, Any]:
         """转换为字典格式"""

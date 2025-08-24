@@ -31,6 +31,9 @@ class Exam(BaseModel, table=True):
     # 试卷ID列表
     goal_id: str = Field(..., description="试卷ID", foreign_key="goal.id")
 
+    # 标题
+    title: str = Field(..., description="标题")
+
     # 参考人
     examinee_id: str = Field(..., description="参考人ID")
 

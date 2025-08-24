@@ -148,8 +148,10 @@ docker --version
 # 给脚本添加执行权限
 chmod +x deploy.sh
 
-# 构建镜像
-./deploy.sh build
+# 构建镜像:  Git action会执行ci/cd流程，把镜像推送到远程
+
+# 部署: 耗时比较久，用nohup忽略挂断信号，后台自动持续执行
+nohup ./deploy.sh deploy > deploy.log 2>&1 &
 
 # 启动服务
 ./deploy.sh start

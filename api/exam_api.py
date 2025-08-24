@@ -40,6 +40,7 @@ class ExamResponse(BaseModel):
 
 class UpdateExamRequest(BaseModel):
     id: str
+    title: str
     plan_starttime: Optional[str] = None
     plan_duration: Optional[int] = None
     status: Optional[ExamStatus] = None

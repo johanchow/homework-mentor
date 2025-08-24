@@ -9,6 +9,7 @@ from enum import Enum
 from datetime import datetime, timezone
 from entity.base import BaseModel
 import json
+from pydantic import validator
 from utils.helpers import random_uuid
 from entity.message import Message, MessageRole
 from entity.user import User
@@ -21,10 +22,14 @@ class QuestionType(str, Enum):
     """问题类型枚举"""
     judge = "judge"                     # 判断题
     choice = "choice"                   # 选择题
-    qa = "qa"                           # 问答题
+    checking = "checking"               # 自查题
     reading = "reading"                 # 阅读题
-    summary = "summary"                 # 总结题
+    talking = "talking"                 # 口述题
     show = "show"                       # 展示题
+
+    # 后面都是要抛弃的
+    qa = "qa"                         
+    summary = "summary"              
 
 
 class Subject(str, Enum):
@@ -78,6 +83,12 @@ class Question(BaseModel, table=True):
 
     sessions: List['Session'] = Relationship(back_populates="question")
 
+    @validator("type", pre=True)
+    def validate_type(cls, v):
+        try:
+            return QuestionType(v)
+        except ValueError:
+            return QuestionType.UNKNOWN
 
     class Config:
         json_encoders = {

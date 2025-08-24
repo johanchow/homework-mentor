@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 import logging
 from datetime import datetime, timezone
-from entity.goal import Goal, GoalStatus, Subject, create_goal
+from entity.goal import Goal, GoalStatus, create_goal
 from dao.goal_dao import goal_dao
 from dao.user_dao import user_dao
 from utils.jwt_utils import verify_token, get_current_user_id
@@ -29,7 +29,6 @@ class BaseResponse(BaseModel):
 # 请求模型
 class CreateGoalRequest(BaseModel):
     name: str
-    subject: Subject
     ai_prompt: Optional[str] = None
     creator_id: str
     status: Optional[GoalStatus] = GoalStatus.PREPARING
@@ -38,7 +37,6 @@ class CreateGoalRequest(BaseModel):
 class UpdateGoalRequest(BaseModel):
     id: Optional[str] = None
     name: Optional[str] = None
-    subject: Optional[Subject] = None
     status: Optional[GoalStatus] = None
     ai_prompt: Optional[str] = None
     updated_at: Optional[datetime] = None
@@ -53,7 +51,6 @@ async def create_goal_api(request: CreateGoalRequest, current_user_id: str = Dep
 
     请求参数:
     - name: 目标名称
-    - subject: 科目
     - ai_prompt: AI提示词
     - creator_id: 创建人ID
     - status: 目标状态（可选，默认为pending）
@@ -67,7 +64,6 @@ async def create_goal_api(request: CreateGoalRequest, current_user_id: str = Dep
         # 创建目标
         goal = create_goal(
             name=request.name,
-            subject=request.subject,
             ai_prompt=request.ai_prompt,
             creator_id=request.creator_id,
             status=request.status
@@ -92,7 +88,6 @@ async def create_goal_api(request: CreateGoalRequest, current_user_id: str = Dep
 @goal_router.get("/list", response_model=BaseResponse)
 async def list_goals_api(
     name: Optional[str] = Query(None, description="目标名称过滤"),
-    subject: Optional[str] = Query(None, description="科目过滤"),
     creator_id: Optional[str] = Query(None, description="创建人ID过滤"),
     page: int = Query(1, description="页码，默认1"),
     page_size: int = Query(10, description="每页数量，默认10"),
@@ -103,7 +98,6 @@ async def list_goals_api(
 
     查询参数:
     - name: 目标名称过滤（可选）
-    - subject: 科目过滤（可选）
     - status: 状态过滤（可选）
     - creator_id: 创建人ID过滤（可选）
     - page: 页码，默认1
@@ -118,8 +112,6 @@ async def list_goals_api(
         filters = {}
         if name is not None:
             filters["name"] = name
-        if subject is not None:
-            filters["subject"] = subject
         if creator_id is not None:
             filters["creator_id"] = creator_id
 
@@ -180,7 +172,6 @@ async def update_goal(request: UpdateGoalRequest, current_user_id: str = Depends
 
     请求参数:
     - name: 目标名称（可选）
-    - subject: 科目（可选）
     - status: 目标状态（可选）
     - ai_prompt: AI提示词（可选）
     """

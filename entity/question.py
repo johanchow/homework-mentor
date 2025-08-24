@@ -27,7 +27,9 @@ class QuestionType(str, Enum):
     talking = "talking"                 # 口述题
     show = "show"                       # 展示题
 
-    qa = "qa"                         # 抛弃
+    # 后面都是要抛弃的
+    qa = "qa"                         
+    summary = "summary"              
 
 
 class Subject(str, Enum):

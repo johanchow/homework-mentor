@@ -37,7 +37,6 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # 只安装运行时必需的系统依赖
 RUN apt-get update && apt-get install -y \
-    gcc g++ python3-dev pkg-config \
     libgl1 \
     libglib2.0-0 \
     libjpeg-dev \

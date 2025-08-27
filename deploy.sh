@@ -29,6 +29,7 @@ function deploy() {
         --env-file .env \
         -p $PORT:5556 \
         $GHCR_REPO:$TAG
+    echo "🔄 Already started container..."
 }
 
 function status() {

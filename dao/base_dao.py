@@ -161,15 +161,66 @@ class BaseDao(ABC):
         else:
             raise ValueError(f"不支持的操作符: {op}")
 
-    async def _search_by_kwargs(self, Clazz: 'BaseModel', kwargs: dict, skip: int = 0, limit: int = 100) -> List['BaseModel']:
+    def _parse_order_by(self, Clazz: 'BaseModel', order_by: Union[str, List[str], None]) -> List:
         """
-        根据关键字搜索，支持多种比较操作符
+        解析排序参数
+        
+        Args:
+            Clazz: 实体类
+            order_by: 排序参数，可以是：
+                - None: 不排序
+                - str: 单个排序字段，如 "created_at" 或 "-created_at"
+                - List[str]: 多个排序字段，如 ["created_at", "-updated_at"]
+        
+        Returns:
+            List: SQLAlchemy排序条件列表
+        """
+        if not order_by:
+            return []
+        
+        order_conditions = []
+        
+        # 处理单个字符串
+        if isinstance(order_by, str):
+            order_fields = [order_by]
+        else:
+            order_fields = order_by
+        
+        for field in order_fields:
+            # 检查是否有降序标识符
+            if field.startswith('-'):
+                field_name = field[1:]
+                is_desc = True
+            else:
+                field_name = field
+                is_desc = False
+            
+            # 获取字段属性
+            attr = getattr(Clazz, field_name, None)
+            if attr is None:
+                raise ValueError(f"Invalid order column: {field_name}")
+            
+            # 构建排序条件
+            if is_desc:
+                order_conditions.append(attr.desc())
+            else:
+                order_conditions.append(attr.asc())
+        
+        return order_conditions
+
+    async def _search_by_kwargs(self, Clazz: 'BaseModel', kwargs: dict, skip: int = 0, limit: int = 100, order_by: Union[str, List[str], None] = None) -> List['BaseModel']:
+        """
+        根据关键字搜索，支持多种比较操作符和排序
         
         Args:
             Clazz: 实体类
             kwargs: 过滤条件字典
             skip: 跳过数量
             limit: 返回数量限制
+            order_by: 排序参数，可以是：
+                - None: 不排序
+                - str: 单个排序字段，如 "created_at" 或 "-created_at"
+                - List[str]: 多个排序字段，如 ["created_at", "-updated_at"]
         """
         filters = [Clazz.is_deleted == False]
         
@@ -190,7 +241,16 @@ class BaseDao(ABC):
         try:
             session_maker = await self._get_session_maker()
             async with session_maker() as session:
-                statement = select(Clazz).where(*filters).offset(skip).limit(limit)
+                statement = select(Clazz).where(*filters)
+                
+                # 添加排序
+                order_conditions = self._parse_order_by(Clazz, order_by)
+                if order_conditions:
+                    statement = statement.order_by(*order_conditions)
+                
+                # 添加分页
+                statement = statement.offset(skip).limit(limit)
+                
                 result = await session.execute(statement)
                 return result.scalars().all()
         except Exception as e:

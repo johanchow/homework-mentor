@@ -4,7 +4,7 @@
 
 import logging
 from datetime import datetime, timedelta
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Union
 from sqlmodel import select, update, delete
 from dao.base_dao import BaseDao
 from entity.exam import Exam, Answer
@@ -22,9 +22,9 @@ class ExamDAO(BaseDao):
         """根据ID获取考试"""
         return await self._get_by_id(Exam, exam_id)
 
-    async def search_by_kwargs(self, kwargs: dict, skip: int = 0, limit: int = 100) -> List[Exam]:
+    async def search_by_kwargs(self, kwargs: dict, skip: int = 0, limit: int = 100, order_by: Union[str, List[str], None] = None) -> List[Exam]:
         """根据关键字搜索考试"""
-        return await self._search_by_kwargs(Exam, kwargs, skip, limit)
+        return await self._search_by_kwargs(Exam, kwargs, skip, limit, order_by)
 
     async def count_by_kwargs(self, kwargs: dict) -> int:
         """根据关键字统计考试数量"""

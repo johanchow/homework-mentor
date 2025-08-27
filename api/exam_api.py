@@ -13,6 +13,7 @@ from utils.jwt_utils import verify_token, get_current_user_id
 from utils.exceptions import DataNotFoundException, ValidationException, BusinessException
 import json
 import logging
+from utils.api_helper import parse_dynamic_filters
 
 logger = logging.getLogger(__name__)
 
@@ -153,12 +154,10 @@ async def get_exam(id: str = Query(..., description="考试ID"), current_user_id
 
 @exam_router.get("/list")
 async def list_exams(
-    plan_starttime_from: Optional[str] = Query(None, description="开始时间（大于等于）"),
-    plan_starttime_to: Optional[str] = Query(None, description="结束时间（小于等于）"),
-    goal_id: Optional[str] = Query(None, description="目标ID"),
     page: int = Query(1, description="页码"),
     page_size: int = Query(10, description="每页数量"),
-    current_user_id: str = Depends(get_current_user_id)
+    current_user_id: str = Depends(get_current_user_id),
+    request: Request = None
 ):
     """获取考试列表"""
     try:
@@ -169,21 +168,30 @@ async def list_exams(
         # 构建查询条件
         kwargs = {'is_deleted': False, 'examinee_id': current_user_id}
         
-        if goal_id:
-            kwargs['goal_id'] = goal_id
-        # 添加时间过滤条件
-        if plan_starttime_from and plan_starttime_to:
-            # 如果同时有开始和结束时间，使用between
-            kwargs['plan_starttime'] = {"$between": [plan_starttime_from, plan_starttime_to]}
-        elif plan_starttime_from:
-            # 只有开始时间
-            kwargs['plan_starttime'] = {"$gte": plan_starttime_from}
-        elif plan_starttime_to:
-            # 只有结束时间
-            kwargs['plan_starttime'] = {"$lte": plan_starttime_to}
+        # 解析动态过滤参数
+        dynamic_filters = parse_dynamic_filters(request)
+        kwargs.update(dynamic_filters)
+        
+        # # 添加基本过滤条件
+        # if goal_id:
+        #     kwargs['goal_id'] = goal_id
+            
+        # # 添加时间过滤条件
+        # if plan_starttime_from and plan_starttime_to:
+        #     # 如果同时有开始和结束时间，使用between
+        #     kwargs['plan_starttime'] = {"$between": [plan_starttime_from, plan_starttime_to]}
+        # elif plan_starttime_from:
+        #     # 只有开始时间
+        #     kwargs['plan_starttime'] = {"$gte": plan_starttime_from}
+        # elif plan_starttime_to:
+        #     # 只有结束时间
+        #     kwargs['plan_starttime'] = {"$lte": plan_starttime_to}
 
+        # 获取排序参数
+        order_by = request.query_params.get('order_by', '-plan_starttime')
+        
         # 查询考试列表
-        exams = await exam_dao.search_by_kwargs(kwargs, skip, limit)
+        exams = await exam_dao.search_by_kwargs(kwargs, skip, limit, order_by=order_by)
         total = await exam_dao.count_by_kwargs(kwargs)
 
         # 转换为字典格式

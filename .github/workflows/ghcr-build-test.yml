@@ -3,7 +3,7 @@ name: Build and Push FastAPI Docker Image to GHCR
 on:
   push:
     branches:
-      - main
+      - test
 
 jobs:
   build-and-push:

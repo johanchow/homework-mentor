@@ -35,6 +35,9 @@ class Settings(BaseSettings):
     # 数据库配置（如果需要）
     DATABASE_URL: str = None
 
+    # easyocr指定保存下载model的路径
+    EASYOCR_MODULE_PATH: str = None
+
     class Config:
         env_file = ".env"
         case_sensitive = True

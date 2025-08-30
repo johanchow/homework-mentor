@@ -9,10 +9,14 @@ GHCR_REPO="ghcr.io/johanchow/homework-mentor"
 CONTAINER_NAME="fastapi_container"
 PORT=5556
 ROLLBACK_TAG_FILE="rollback_tag.txt"
+# 如果ENVIRONMENT=test，则用test镜像，否则用latest镜像
+if [ "$ENVIRONMENT" = "test" ]; then
+    TAG="test"
+else
+    TAG="latest"
+fi
 
 function deploy() {
-    TAG=${1:-latest}
-
     echo "✅ Pulling image: $GHCR_REPO:$TAG"
     docker pull $GHCR_REPO:$TAG
 

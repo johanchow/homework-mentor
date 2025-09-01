@@ -24,7 +24,7 @@ class AgentState(TypedDict):
 def decide_route(state: AgentState):
     if state["session"].topic == TopicType.GUIDE:
         subject = state["session"].question.subject.value
-        return f"{subject}-topic-guide"
+        return f"topic-guide"
     elif state["session"].topic == TopicType.RAISE:
         subject = state["session"]._goal.subject
         return f"{subject}-topic-raise"
@@ -68,8 +68,7 @@ def create_workflow() -> CompiledGraph:
     graph = StateGraph(state_schema=AgentState)
 
     # Define the (single) node in the graph
-    graph.add_node("chinese-topic-guide", call_chinese_guide)
-    graph.add_node("math-topic-guide", call_chinese_guide)
+    graph.add_node("topic-guide", call_chinese_guide)
     graph.add_node("chinese-topic-raise", call_chinese_raiser)
     graph.add_node("english-topic-import", call_english_import)
     graph.add_node("topic-gossip", call_gossip_agent)

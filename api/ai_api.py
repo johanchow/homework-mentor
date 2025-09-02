@@ -9,12 +9,13 @@ from typing import List, Optional, Dict, Any
 import logging
 import json
 from agents.agent_graph import agent_graph
-from agents.parse_image_agent import ParseImageAgent
+from agents.summary_agent import SummaryAgent
 from entity.session import create_session, TopicType
 from dao.session_dao import session_dao
 from dao.question_dao import question_dao
 from entity.message import create_message, MessageRole, MessageType
 from entity.question import create_question
+import service.ocr_service as ocr_service
 from utils.exceptions import DataNotFoundException, ValidationException
 from utils.jwt_utils import get_current_user_id
 
@@ -213,15 +214,14 @@ async def parse_questions_from_images(request: ParseQuestionsRequest, current_us
         if not request.image_urls:
             raise ValidationException("image_urls", "图片列表不能为空")
         
+        results = ocr_service.read_text_from_image(request.image_urls[0])
+        all_text = '\n'.join([result.text for result in results])
+        logger.info(f'从图片中提取的全部文字: {all_text}')
+        print(f'从图片中提取的全部文字: {all_text}')
+
         # 调用AI解析题目
-        parse_image_agent = ParseImageAgent()
-        # 创建包含图片的消息
-        image_contents = [{"type": "image_url", "image_url": {"url": image}} for image in request.image_urls]
-        message = create_message(
-            role=MessageRole.USER,
-            content=image_contents
-        )
-        questions = parse_image_agent.process_input(message)
+        summary_agent = SummaryAgent()        
+        questions = await summary_agent.process_input(all_text)
         logger.info(f'完成从图片中提取题目，题目数量: {len(questions)}')
         
         return BaseResponse(

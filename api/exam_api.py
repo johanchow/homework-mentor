@@ -41,7 +41,7 @@ class ExamResponse(BaseModel):
 
 class UpdateExamRequest(BaseModel):
     id: str
-    title: str
+    title: Optional[str] = None
     plan_starttime: Optional[str] = None
     plan_duration: Optional[int] = None
     status: Optional[ExamStatus] = None
@@ -166,7 +166,8 @@ async def list_exams(
         limit = page_size
 
         # 构建查询条件
-        kwargs = {'is_deleted': False, 'examinee_id': current_user_id}
+        # kwargs = {'is_deleted': False, 'examinee_id': current_user_id}
+        kwargs = {'is_deleted': False}
         
         # 解析动态过滤参数
         dynamic_filters = parse_dynamic_filters(request)

@@ -67,7 +67,7 @@ class Question(BaseModel, table=True):
     options: Optional[str] = Field(default=None, description="选项列表字符串(选择题专用,以逗号分割)")
 
     # 材料内容，可能是文件中提取的，可能是题目中提取的
-    material: Optional[str] = Field(default=None, description="内容字符串")
+    material: Optional[str] = Field(default=None, description="内容字符串json")
 
     # 时间信息
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="创建时间")
@@ -138,6 +138,8 @@ class Question(BaseModel, table=True):
             value = getattr(self, field)
             if field in ['images', 'audios', 'videos', 'options', 'attachments', 'links']:
                 result[field] = value.split(',') if value else []
+            elif field in ['material']:
+                result[field] = json.loads(value) if value else {}
             elif field in ['created_at', 'updated_at']:
                 result[field] = mysql_datetime_to_iso(value)
             else:

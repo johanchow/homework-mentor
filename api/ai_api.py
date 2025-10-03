@@ -18,6 +18,7 @@ from entity.question import create_question
 import service.ocr_service as ocr_service
 from utils.exceptions import DataNotFoundException, ValidationException
 from utils.jwt_utils import get_current_user_id
+from service.extract_file_word import extract_text_from_file_url
 
 logger = logging.getLogger(__name__)
 
@@ -255,4 +256,16 @@ async def analyze_question(request: AnalyzeQuestionRequest, current_user_id: str
         logger.error(f"分析题目失败: {e}")
         raise HTTPException(status_code=500, detail=f"分析题目失败: {str(e)}")
 
+class ExtractWordsRequest(BaseModel):
+    file_url: str
 
+@ai_router.post("/extract-words", response_model=BaseResponse)
+async def extract_words(request: ExtractWordsRequest, current_user_id: str = Depends(get_current_user_id)):
+    """提取图片中的文字"""
+    image_text = extract_text_from_file_url(request.file_url)
+    return BaseResponse(
+        message="success",
+        data={
+            "words": image_text
+        }
+    )

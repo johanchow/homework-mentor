@@ -45,7 +45,8 @@ class GenerateQuestionsRequest(BaseModel):
     session_id: Optional[str] = None
 
 class ParseQuestionsRequest(BaseModel):
-    image_urls: List[str]
+    image_urls: List[str] = []
+    text: str = ''
 
 class AnalyzeQuestionRequest(BaseModel):
     question: Dict[str, Any]
@@ -212,16 +213,17 @@ async def generate_questions(request: GenerateQuestionsRequest, current_user_id:
 @ai_router.post("/parse-questions-from-images", response_model=BaseResponse)
 async def parse_questions_from_images(request: ParseQuestionsRequest, current_user_id: str = Depends(get_current_user_id)):
     """从图片中解析题目"""
+    if not request.text and not request.image_urls:
+        raise ValidationException("image_urls | text", "图片列表和文字不能同时为空")
     try:
-        logger.info(f'开始从图片中提取题目，图片数量: {len(request.image_urls)}')
-        if not request.image_urls:
-            raise ValidationException("image_urls", "图片列表不能为空")
-        
-        results = ocr_service.read_text_from_image(request.image_urls[0])
+        results = []
+        for image_url in request.image_urls:
+            results = ocr_service.read_text_from_image(image_url)
         # results = landing_service.read_text_from_file(request.image_urls[0])
         all_text = '\n'.join([result.text for result in results])
         logger.info(f'从图片中提取的全部文字: {all_text}')
         print(f'从图片中提取的全部文字: {all_text}')
+        all_text = all_text + '\n' + request.text
 
         # 调用AI解析题目
         summary_agent = SummaryAgent()        

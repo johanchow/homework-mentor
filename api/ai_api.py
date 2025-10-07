@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 import logging
 import json
+import traceback
 from agents.agent_graph import agent_graph
 from agents.summary_agent import SummaryAgent
 from entity.session import create_session, TopicType
@@ -16,9 +17,10 @@ from dao.question_dao import question_dao
 from entity.message import create_message, MessageRole, MessageType
 from entity.question import create_question
 import service.ocr_service as ocr_service
+import service.landing_service as landing_service
 from utils.exceptions import DataNotFoundException, ValidationException
 from utils.jwt_utils import get_current_user_id
-from service.extract_file_word import extract_text_from_file_url
+# from service.extract_file_word import extract_text_from_file_url
 
 logger = logging.getLogger(__name__)
 
@@ -216,6 +218,7 @@ async def parse_questions_from_images(request: ParseQuestionsRequest, current_us
             raise ValidationException("image_urls", "图片列表不能为空")
         
         results = ocr_service.read_text_from_image(request.image_urls[0])
+        # results = landing_service.read_text_from_file(request.image_urls[0])
         all_text = '\n'.join([result.text for result in results])
         logger.info(f'从图片中提取的全部文字: {all_text}')
         print(f'从图片中提取的全部文字: {all_text}')
@@ -236,6 +239,7 @@ async def parse_questions_from_images(request: ParseQuestionsRequest, current_us
         raise
     except Exception as e:
         logger.error(f"解析图片失败: {e}")
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"解析图片失败: {str(e)}")
 
 @ai_router.post("/analyze-question", response_model=BaseResponse)
@@ -262,10 +266,13 @@ class ExtractWordsRequest(BaseModel):
 @ai_router.post("/extract-words", response_model=BaseResponse)
 async def extract_words(request: ExtractWordsRequest, current_user_id: str = Depends(get_current_user_id)):
     """提取图片中的文字"""
-    image_text = extract_text_from_file_url(request.file_url)
+    # image_text = landing_service.read_text_from_file(request.file_url)
+    results = ocr_service.read_text_from_image(request.file_url)
+    # results = landing_service.read_text_from_file(request.image_urls[0])
+    all_text = '\n'.join([result.text for result in results])
     return BaseResponse(
         message="success",
         data={
-            "words": image_text
+            "words": all_text,
         }
     )

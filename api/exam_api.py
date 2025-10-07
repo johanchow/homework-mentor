@@ -5,6 +5,7 @@
 from fastapi import APIRouter, HTTPException, Depends, Query, Body, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any
 from entity.exam import Exam, ExamStatus, create_exam
 from dao.question_dao import question_dao
@@ -14,6 +15,7 @@ from utils.exceptions import DataNotFoundException, ValidationException, Busines
 import json
 import logging
 from utils.api_helper import parse_dynamic_filters
+from utils.helpers import random_uuid
 
 logger = logging.getLogger(__name__)
 
@@ -22,8 +24,9 @@ exam_router = APIRouter(prefix="/exam", tags=["考试管理"])
 
 # 请求模型
 class CreateExamRequest(BaseModel):
-    goal_id: str
-    examinee_id: str
+    goal_id: Optional[str] = None
+    title: str = None
+    examinee_id: Optional[str] = None
     question_ids: List[str]
     plan_starttime: str
     plan_duration: int
@@ -47,6 +50,9 @@ class UpdateExamRequest(BaseModel):
     status: Optional[ExamStatus] = None
     material: Optional[str] = None
     question_ids: Optional[List[str]] = None
+
+class CopyExamRequest(BaseModel):
+    id: str
 
 
 
@@ -239,3 +245,31 @@ async def update_exam(request: UpdateExamRequest, current_user_id: str = Depends
     except Exception as e:
         logger.exception(f"更新考试失败: {e}")
         raise HTTPException(status_code=500, detail="更新考试失败，请稍后重试")
+
+@exam_router.post("/copy", response_model=ExamResponse)
+async def copy_exam(request: CopyExamRequest, current_user_id: str = Depends(get_current_user_id)):
+    """复制考试"""
+    try:
+        # 获取原始考试
+        original_exam = await exam_dao.get_by_id(request.id)
+        if not original_exam:
+            raise DataNotFoundException("考试", request.id)
+        
+        # 创建新的考试对象，避免修改原对象
+        exam_data = original_exam.to_dict()
+        exam_data['id'] = random_uuid()
+        exam_data['created_at'] = datetime.now(timezone.utc).isoformat()
+        exam_data['updated_at'] = datetime.now(timezone.utc).isoformat()
+        exam_data['is_deleted'] = False
+        
+        # 从字典创建新的Exam对象
+        new_exam = Exam.from_dict(exam_data)
+        
+        saved_exam = await exam_dao.create(new_exam)
+        return ExamResponse(
+            message='复制考试成功',
+            data=saved_exam.to_dict()
+        )
+    except Exception as e:
+        logger.exception(f"复制考试失败: {e}")
+        raise HTTPException(status_code=500, detail="复制考试失败，请稍后重试")

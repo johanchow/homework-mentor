@@ -22,10 +22,10 @@ class ParseImageAgent(ABC):
     def __init__(self, agent_id: Optional[str] = None, **kwargs):
         # super().__init__(agent_id, **kwargs)
         self.system_prompt: Message = create_message(role=MessageRole.SYSTEM, content="""
-	用户会可能会传入一段文字、或者若干个图片，里面都应该是多个小学题目。也可能会包含一点杂乱无用的信息。
+	用户会可能会传入一段文字、或者若干个图片，里面都应该是多个作业题目。也可能会包含一点杂乱无用的信息。
 
-题目的全部类型有： 选择题(choice)、判断题(judge)、问答题(qa)
-题目的全部学科有: chinese、math、english、science、social、other
+题目的全部类型有： 选择题(choice)、判断题(judge)、阅读题(reading)、口述题(talking)、表演题(show)、其他自查完成题(checking)
+题目的全部学科有: chinese、math、english、physics、chemistry、biology、history、geography、politics、other
 
 请你帮我提取出全部文字和全部图片中的所有题目。每道题最多包含以下属性：
 - title: 题目文字，必填

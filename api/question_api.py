@@ -45,7 +45,7 @@ class QuestionUpdateRequest(BaseModel):
     subject: Optional[Subject] = None
     type: Optional[QuestionType] = None
     title: Optional[str] = None
-    material: Optional[str] = None
+    material: Optional[Dict[str, Any]] = None
     options: Optional[List[str]] = None
     images: Optional[List[str]] = None
     audios: Optional[List[str]] = None
@@ -178,6 +178,8 @@ async def update_question_api(request: QuestionUpdateRequest, current_user_id: s
             question.audios = ",".join(request.audios) if request.audios else None
         if request.videos is not None:
             question.videos = ",".join(request.videos) if request.videos else None
+        if request.material is not None:
+            question.material = json.dumps(request.material)
 
 
         # 保存更新

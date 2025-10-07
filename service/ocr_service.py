@@ -183,7 +183,8 @@ if __name__ == "__main__":
     
     # 从本地文件读取
     try:
-        results = ocr_service.read_from_file('99999.png')
+        results = ocr_service.read_from_file('99999.jpg')
+        # results = ocr_service.read_from_url('https://clothing-try-on-1306401232.cos.ap-guangzhou.myqcloud.com/homework-mentor/1756785640-11111.jpg')
         print("本地文件识别结果:")
         for result in results:
             print(f"文本: {result.text}")

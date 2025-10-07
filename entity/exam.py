@@ -29,7 +29,7 @@ class Exam(BaseModel, table=True):
     id: Optional[str] = Field(default_factory=lambda: random_uuid(), primary_key=True, description="试卷唯一标识")
 
     # 试卷ID列表
-    goal_id: str = Field(..., description="试卷ID", foreign_key="goal.id")
+    goal_id: Optional[str] = Field(..., description="试卷ID", foreign_key="goal.id")
 
     # 标题
     title: str = Field(..., description="标题")

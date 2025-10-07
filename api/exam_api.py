@@ -54,6 +54,9 @@ class UpdateExamRequest(BaseModel):
 class CopyExamRequest(BaseModel):
     id: str
 
+class BindExamRequest(BaseModel):
+    id: str
+
 
 
 
@@ -273,3 +276,28 @@ async def copy_exam(request: CopyExamRequest, current_user_id: str = Depends(get
     except Exception as e:
         logger.exception(f"复制考试失败: {e}")
         raise HTTPException(status_code=500, detail="复制考试失败，请稍后重试")
+
+@exam_router.post("/bind", response_model=ExamResponse)
+async def bind_exam(request: BindExamRequest, current_user_id: str = Depends(get_current_user_id)):
+    """绑定考试 - 将考试分配给当前用户"""
+    try:
+        # 验证考试是否存在
+        exam = await exam_dao.get_by_id(request.id)
+        if not exam:
+            raise DataNotFoundException("考试", request.id)
+        
+        # 更新分配人字段
+        exam.examinee_id = current_user_id
+        updated_exam = await exam_dao.update(exam)
+        
+        return ExamResponse(
+            message='考试绑定成功',
+            data=updated_exam.to_dict()
+        )
+    
+    except BusinessException:
+        raise
+    
+    except Exception as e:
+        logger.exception(f"绑定考试失败: {e}")
+        raise HTTPException(status_code=500, detail="绑定考试失败，请稍后重试")

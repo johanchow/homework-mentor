@@ -30,7 +30,6 @@ class SummaryAgent:
 - title: 题目文字，必填
 - subject: 题目学科，必填
 - type: 题目类型，必填
-- material: 题目材料，只有type为reading时，才可能存在
 - options: 题目选项，只有type为choice时，才需要填写
 
 请返回所有题目的 JSON 列表。
@@ -40,7 +39,7 @@ class SummaryAgent:
 
 举例2:
 [题目] 请阅读图片的内容
-[输出] { "title": "请阅读图片的内容", "subject": "english", "type": "reading", "material": "The picture shows a cat." }
+[输出] { "title": "请阅读图片的内容", "subject": "english", "type": "reading" }
 
 举例3:
 [题目] 讲解课文P53页的诗词含义

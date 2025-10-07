@@ -38,6 +38,9 @@ class Settings(BaseSettings):
     # easyocr指定保存下载model的路径
     EASYOCR_MODULE_PATH: str = None
 
+    # LandingAPI配置
+    VISION_AGENT_API_KEY: str = None
+
     class Config:
         env_file = ".env"
         case_sensitive = True
